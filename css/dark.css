@@ -1,0 +1,341 @@
+body {
+  background-color: #33373A;
+  font-family: sans-serif;
+  color: #CBD0D0;
+  margin: 0px;
+}
+
+a {
+  color: #CBD0D0;
+  text-decoration: none;
+}
+
+ul {
+  list-style-type: none;
+}
+
+#heather {
+  background-color: #24282A;
+  border: 1px solid black;
+  height: 36px;
+  width: 100%;
+  position: fixed;
+  top: 0px;
+}
+
+#title {
+  text-align: center;
+  margin: 0px;
+  padding: 5px;
+  text-shadow: 2px 2px 2px black;
+}
+
+#menuButton {
+  position: absolute;
+  font-size: 20px;
+  text-align: center;
+  background-color: #33373A;
+  border: 1px solid black;
+  width: 32px;
+  height: 30px;
+  margin: 2px;
+}
+
+#menu {
+  visibility: hidden;
+  position: fixed;
+  background-color: #24282A;
+  top: 39px;
+  left: 1px;
+  padding: 0px;
+  margin: 0px;
+  border: 1px solid black;
+}
+
+#menu li {
+  padding: 6px 30px 6px 10px;
+  border-bottom: 1px solid #33373A;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#menu li:last-child {
+  border-bottom: 0px;
+}
+
+.liDivider {
+  background-color: #33373A;
+  border-top: 1px solid #CBD0D0;
+  cursor: default !important;
+}
+
+/* Application map*/
+#appMap {
+  padding: 4px;
+  padding-bottom: 0px;
+}
+
+#appMap table {
+  width: 100%;
+  border: 1px solid black;
+  border-spacing: 0px;
+  margin-bottom: 4px;
+}
+
+#appMap table td {
+  padding: 0px;
+  vertical-align: top;
+}
+
+#appMap h2{
+  background-color: rgba(0, 0, 0, 0.4);
+  color: white;
+  text-shadow: 2px 2px 2px black;
+  margin: 0px;
+  padding: 2px;
+  border-bottom: 1px solid black;
+}
+
+#appMap table tr:last-child td:first-child {
+  width: 128px;
+  padding: 2px;
+}
+
+#appMap ul {
+  margin: 0;
+  padding: 1px;
+}
+
+#appMap li {
+  border-right: 1px solid black;
+  border-left: 1px solid black;
+  border-top: 1px solid black;
+  font-size: 18px;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+ 
+#appMap li:last-child {
+  border-bottom: 1px solid black;
+}
+
+#appMap li a {
+  text-decoration: none;
+  color: white;
+  text-shadow: 1px 1px 1px black;
+  display: block;
+  padding: 2px;
+}
+ 
+#appMap li a:hover {
+  background: #f6f6f6;
+}
+/* End Application map*/
+
+#mainContent {
+  margin-top: 39px;
+}
+
+.emojiIcon {
+  font-size: 90px;
+}
+
+#grid table {
+  border-collapse: collapse;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: bold;
+  border: 1px solid black;
+  margin-left: 1px;
+}
+
+#grid tr:hover td {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+#grid tr {
+  border-bottom: 1px solid #24282A;
+}
+
+#grid td {
+  padding: 4px;
+}
+
+#grid th {
+  background-color: #24282A;
+  border: 1px solid #000000;
+  font-size: 14px;
+  padding: 2px 3px;
+}
+
+#grid thead {
+  position: sticky;
+  top: 50px;
+}
+
+#edit {
+  background-color: #33373A;
+  border: 1px solid black;
+  /*width: 300px;*/
+  padding: 5px;
+  z-index: 1;
+  position: fixed;
+  top: 20%;
+  left: calc(50% - 150px);
+}
+
+#edit table {
+  width: 100%;
+  font-weight: bold;
+  background-color: #24282A;
+  border: 1px solid black;
+  border-radius: 2px;
+}
+
+#edit td:first-child {
+  border-bottom: 1px solid #33373A;
+}
+
+#edit tr:last-child td:first-child {
+  border-bottom: none;
+}
+
+#edit tr {
+  height: 32px;
+}
+
+#edit td {
+  padding-left: 4px;
+}
+
+select, input {
+  background-color: #33373A;
+  color: #CBD0D0;
+  font-weight: bold;
+  border: 1px solid black;
+  border-radius: 2px;
+}
+
+select {
+  height: 26px;
+  width: 100%;
+}
+
+option {
+  font-weight: bold;
+}
+
+input {
+  height: 22px;
+  width: 200px;
+  padding-left: 4px;
+}
+
+#edit > div {
+  text-align: center;
+  background-color: #24282A;
+  border: 1px solid black;
+  border-radius: 2px;
+  margin-top: 5px;
+}
+
+#edit button {
+  background-color: #2A4151;
+  border: 1px solid black;
+  border-radius: 2px;
+  margin: 3px 5px;
+  width: 80px;
+  color: #CBD0D0;
+  padding: 3px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.bubbleTd {
+  background-clip: padding-box;
+  border-radius: 5px;
+  background-color: #00000033;
+  border: 1px solid black;
+  color: #ffffff;
+  font-size: 16px;
+  text-align: center;
+  padding: 0px 3px 0px 3px;
+}
+
+.multiSelectDropDown {
+  font-size: 14px;
+  width: 204px;
+}
+
+.multiSelectDropDown > div {
+  display: flex;
+  align-items: center;
+  border: 1px solid black;
+  border-radius: 2px;
+  height: 24px;
+  background-color: #24282A;
+  padding: 0px 2px;
+}
+
+.multiSelectDropDown .selectedOptions {
+  flex-grow: 1;
+  display: flex;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.multiSelectDropDown span {
+  background-color: #2A4151;
+  padding: 0px 2px;
+  margin-right: 3px;
+  border: 1px solid black;
+  border-radius: 2px;
+}
+
+.multiSelectDropDown .button {
+  background-color: #24282A;
+  min-width: 18px;
+  height: 18px;
+  border: 1px solid black;
+  border-radius: 2px;
+  text-align: center;
+  font-size: 14px;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.multiSelectDropDown ul {
+  list-style-type: none;
+  padding: 0px;
+  margin: 1px 0px 0px 0px;
+  position: absolute;
+  width: 202px;
+  visibility: hidden;
+  border: 1px solid black;
+  border-radius: 2px;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.multiSelectDropDown li {
+  background-color: #45474B;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.multiSelectDropDown .optionSelected {
+  background-color: #007ACC;
+}
+
+#__rep_CostsReport > div {
+  display: flex;
+}
+
+#__rep_CostsReport .multiSelectDropDown {
+  width: auto;
+  flex-grow: 1;
+}
+
+#__rep_CostsReport select {
+  width: auto;
+  margin: 0px 2px;
+}
