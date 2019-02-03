@@ -463,7 +463,7 @@ aaf.getInput = (prop) => {
       let out =  `<div id="__${prop.name}" data-${required} class="multiSelectDropDown">
                     <div onclick="multiSelect('__${prop.name}').show();">
                       <div class="selectedOptions"></div>
-                      <div class="button">⮟</div>
+                      <div class="button">⏷</div>
                     </div>
                     <ul>`;
       for (rec of prop.source.store.data) {

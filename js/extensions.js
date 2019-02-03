@@ -151,7 +151,7 @@ var multiSelect = function(id) {
       this.element.innerHTML = 
         `<div onclick="multiSelect('${id}').show();">
           <div class="selectedOptions"></div>
-          <div class="button">⮟</div>
+          <div class="button">⏷</div>
         </div>
         <ul>${options}</ul>`;
     },
@@ -184,7 +184,7 @@ var multiSelect = function(id) {
           if (bgColor !== undefined)
             style = ` style="background-color:${bgColor};"`;
         }
-        
+
         out += `<span${style}>${x.textContent}</span>`
       });
       this.element.querySelector(".selectedOptions").innerHTML = out;
@@ -196,7 +196,7 @@ var multiSelect = function(id) {
       let ul = this.element.querySelector("ul"),
           visible = ul.style.visibility == "visible";
       ul.style.visibility = visible ? "hidden" : "visible";
-      this.element.querySelector(".button").innerHTML = visible ? "⮟" : "✔";
+      this.element.querySelector(".button").innerHTML = visible ? "⏷" : "✔";
     }
   };
 }
