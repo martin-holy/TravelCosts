@@ -11,6 +11,7 @@ self.addEventListener('install', e => {
         '',
         '/',
         '/TravelCosts/',
+        '/TravelCosts/sw_cached_files.js',
         '/TravelCosts/index.html',
         '/TravelCosts/dbSchema.json',
         '/TravelCosts/manifest.json',
