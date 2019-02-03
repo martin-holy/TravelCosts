@@ -336,6 +336,6 @@ input {
 }
 
 #__rep_CostsReport select {
-  width: auto;
+  width: 90px;
   margin: 0px 2px;
 }

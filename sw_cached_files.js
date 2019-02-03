@@ -9,7 +9,6 @@ self.addEventListener('install', e => {
       console.log('Service Worker: Caching Files');
       return cache.addAll([
         '/TravelCosts/',
-        '/TravelCosts/sw_cached_files.js',
         '/TravelCosts/index.html',
         '/TravelCosts/dbSchema.json',
         '/TravelCosts/manifest.json',
