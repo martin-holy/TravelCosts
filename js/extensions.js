@@ -140,20 +140,27 @@ if (!Array.prototype.orderBy) {
   };
 }
 
-var multiSelect = function(id) {
+var xSelect = function(id) {
   return { 
     element: document.getElementById(id),
 
-    create: function (data) {
-      this.element.dataset.dataSource = JSON.stringify(data);
-      let options = "";
-      data.forEach(x => options += `<li value="${x.value}" onclick="multiSelect('${id}').select(this);">${x.name}</li>`);
-      this.element.innerHTML = 
-        `<div onclick="multiSelect('${id}').show();">
+    create: function (data, multi = true, withDataSource = false) {
+      let options = [],
+          elm = document.createElement("div");
+      
+      data.forEach(x => options.push(`<li value="${x.value}" onclick="xSelect('${id}').select(this);">${x.name}</li>`));
+      elm.id = id;
+      elm.className = "xSelect";
+      elm.dataset.multi = multi;
+      if (withDataSource) elm.dataset.dataSource = JSON.stringify(data);
+      elm.innerHTML =
+        `<div onclick="xSelect('${id}').show();">
           <div class="selectedOptions"></div>
           <div class="button">⏷</div>
         </div>
-        <ul>${options}</ul>`;
+        <ul>${options.join("")}</ul>`;
+
+      this.element = elm;
     },
 
     get: function() {
@@ -169,12 +176,16 @@ var multiSelect = function(id) {
     },
 
     select: function(li) {
+      if (this.element.dataset.multi == "false") {
+        this.element.querySelectorAll("li").forEach(x => x.classList.remove("optionSelected"));
+        this.show();
+      }
       li.classList.toggle("optionSelected");
       this.list();
     },
 
     list: function() {
-      let out = "",
+      let out = [],
           dataSource = JSON.parse(this.element.dataset.dataSource || null);
       this.element.querySelectorAll(".optionSelected").forEach(x => {
         let style = '';
@@ -185,9 +196,9 @@ var multiSelect = function(id) {
             style = ` style="background-color:${bgColor};"`;
         }
 
-        out += `<span${style}>${x.textContent}</span>`
+        out.push(`<span${style}>${x.textContent}</span>`);
       });
-      this.element.querySelector(".selectedOptions").innerHTML = out;
+      this.element.querySelector(".selectedOptions").innerHTML = out.join('');
       if (this.element.dataset.onchange)
         window[this.element.dataset.onchange]();
     },

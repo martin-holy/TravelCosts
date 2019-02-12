@@ -10,13 +10,13 @@ self.addEventListener('install', e => {
       return cache.addAll([
         '/TravelCosts/',
         '/TravelCosts/index.html',
-        '/TravelCosts/dbSchema.json',
         '/TravelCosts/manifest.json',
         '/TravelCosts/css/dark.css',
         '/TravelCosts/img/icon-128x128.png',
         '/TravelCosts/js/AppsAndForms.js',
         '/TravelCosts/js/custom.js',
-        '/TravelCosts/js/extensions.js'
+        '/TravelCosts/js/extensions.js',
+        '/TravelCosts/js/appStores.js'
       ]);
     })
   );

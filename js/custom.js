@@ -452,6 +452,19 @@ monCostsReport = async () => {
   let costTypes = Array.from(await aaf.getStoreRecords('MON_CostsTypes')).orderBy('name');
 
   if (document.getElementById('__rep_CostsReport') == null) {
+    let forCreate = [],
+        forSet = [],
+        typesSelect = xSelect('__rep_costTypeId');
+
+    costTypes.forEach(x => {
+      forCreate.push({value: x.id, name: x.name, bgColor: x.bgColor});
+      forSet.push(x.id);
+    });
+
+    typesSelect.create(forCreate, true, true);
+    typesSelect.set(forSet);
+    typesSelect.element.dataset.onchange = 'monCostsReport';
+
     document.getElementById('treeView').innerHTML = `
       <div id="__rep_CostsReport">
         <div>
@@ -461,24 +474,14 @@ monCostsReport = async () => {
             <option value="6">6 Months</option>
             <option value="12">1 Year</option>
           </select>
-          <div id="__rep_costTypeId" class="multiSelectDropDown" data-onchange="monCostsReport"></div>
+          ${typesSelect.element.outerHTML}
         </div>
         <div id="__rep_CostsReportData"></div>
       </div>`;
-
-    let forCreate = [],
-        forSet = [];
-
-    costTypes.forEach(x => {
-      forCreate.push({value: x.id, name: x.name, bgColor: x.bgColor});
-      forSet.push(x.id);
-    });
-
-    multiSelect('__rep_costTypeId').create(forCreate);
-    multiSelect('__rep_costTypeId').set(forSet);
+ 
   }
 
-  let selectedCostTypes = multiSelect('__rep_costTypeId').get();
+  let selectedCostTypes = xSelect('__rep_costTypeId').get();
   if (selectedCostTypes.length == 0) return;
   
   let groupBy = document.getElementById('__rep_groupBy').value,
@@ -571,11 +574,12 @@ monCostsReport = async () => {
                    <td class="bubbleTd" rowspan="${year.parts.length}">${year.sum.round(0)}</td>`;
       }
 
-      output += `
+      if (groupBy != 12)
+        output += `
           <td class="bubbleTd">${part.name.convertToRoman()}</td>
-          <td class="bubbleTd">${typesSum.round(0)}</td>
-          <td><svg height="20px" width="${typesSum.round(0)}px" xmlns="http://www.w3.org/2000/svg" display="block">${svg}</svg></td>
-        </tr>`;
+          <td class="bubbleTd">${typesSum.round(0)}</td>`;
+          
+      output += `<td><svg height="20px" width="${typesSum.round(0)}px" xmlns="http://www.w3.org/2000/svg" display="block">${svg}</svg></td></tr>`;
     }
   }
   output += '</table>';

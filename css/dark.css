@@ -146,7 +146,7 @@ ul {
   font-size: 90px;
 }
 
-#grid table {
+.grid {
   border-collapse: collapse;
   white-space: nowrap;
   font-size: 12px;
@@ -155,26 +155,26 @@ ul {
   margin-left: 1px;
 }
 
-#grid tr:hover td {
+.grid tr:hover td {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
-#grid tr {
+.grid tr {
   border-bottom: 1px solid #24282A;
 }
 
-#grid td {
+.grid td {
   padding: 4px;
 }
 
-#grid th {
+.grid th {
   background-color: #24282A;
   border: 1px solid #000000;
   font-size: 14px;
   padding: 2px 3px;
 }
 
-#grid thead {
+.grid thead {
   position: sticky;
   top: 50px;
 }
@@ -183,7 +183,7 @@ ul {
   background-color: #33373A;
   border: 1px solid black;
   padding: 5px;
-  position: absolute;
+  position: fixed;
   top: 20%;
   left: 50%;
   transform: translate(-50%, -20%);
@@ -267,37 +267,37 @@ input {
   padding: 0px 3px 0px 3px;
 }
 
-.multiSelectDropDown {
+.xSelect {
   font-size: 14px;
   width: 204px;
 }
 
-.multiSelectDropDown > div {
+.xSelect > div {
   display: flex;
   align-items: center;
   border: 1px solid black;
   border-radius: 2px;
   height: 24px;
-  background-color: #24282A;
+  background-color: #33373A;
   padding: 0px 2px;
 }
 
-.multiSelectDropDown .selectedOptions {
+.xSelect .selectedOptions {
   flex-grow: 1;
   display: flex;
   white-space: nowrap;
   overflow: hidden;
 }
 
-.multiSelectDropDown span {
-  background-color: #2A4151;
+.xSelect span {
+/*background-color: #2A4151;
+  border: 1px solid black;
+  border-radius: 2px;*/
   padding: 0px 2px;
   margin-right: 3px;
-  border: 1px solid black;
-  border-radius: 2px;
 }
 
-.multiSelectDropDown .button {
+.xSelect .button {
   background-color: #24282A;
   min-width: 18px;
   height: 18px;
@@ -309,7 +309,7 @@ input {
   margin-left: 4px;
 }
 
-.multiSelectDropDown ul {
+.xSelect ul {
   list-style-type: none;
   padding: 0px;
   margin: 1px 0px 0px 0px;
@@ -320,15 +320,19 @@ input {
   border-radius: 2px;
   max-height: 200px;
   overflow: auto;
+  background-color: #45474B;
 }
 
-.multiSelectDropDown li {
-  background-color: #45474B;
+.xSelect li {
   padding: 2px;
   cursor: pointer;
 }
 
-.multiSelectDropDown .optionSelected {
+.xSelect li:hover {
+  background-color: #33373A;
+}
+
+.xSelect .optionSelected {
   background-color: #007ACC;
 }
 
@@ -336,7 +340,7 @@ input {
   display: flex;
 }
 
-#__rep_CostsReport .multiSelectDropDown {
+#__rep_CostsReport .xSelect {
   width: auto;
   flex-grow: 1;
 }
