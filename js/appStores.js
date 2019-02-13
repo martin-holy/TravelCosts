@@ -40,6 +40,12 @@ var appStores = [
       { name: 'stores', title: 'Stores', type: 'multiSelect', required: true, source: { name: 'ADM_AppStores', property: 'name' }}
     ]
   },
+  { name: 'ADM_AppSettings', id: 3, title: 'Application Settings',
+    properties: [
+      { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
+      { name: 'dbVersion', title: 'DB Version', type: 'int', required: true }
+    ]
+  },
   { name: 'GLO_Countries', id: 10, title: 'Countries', orderBy: 'name',
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
@@ -78,11 +84,11 @@ var appStores = [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
       { name: 'amount', title: 'Amount', type: 'num', required: true, align: 'right' },
-      { name: 'currencyId', title: 'Currency', type: 'select', required: true, align: 'center', default: [8], source: { name: 'MON_Currencies', property: 'code' }},
+      { name: 'currencyId', title: 'Code', type: 'select', required: true, align: 'center', default: [8], source: { name: 'MON_Currencies', property: 'code' }},
+      { name: 'eur', title: 'EUR', type: 'calc', align: 'right', funcName: 'amountInEUR' },
       { name: 'costTypeId', title: 'Type', type: 'select', required: true, default: [1], source: { name: 'MON_CostsTypes', property: 'name' }},
-      { name: 'countryId', title: 'Country', type: 'select', required: true, default: [16], source: { name: 'GLO_Countries', property: 'name' }},
       { name: 'desc', title: 'Description', type: 'text' },
-      { name: 'eur', title: 'EUR', type: 'calc', align: 'right', funcName: 'amountInEUR' }
+      { name: 'countryId', title: 'Country', type: 'select', required: true, default: [16], source: { name: 'GLO_Countries', property: 'name' }}
     ],
     functions: [
       { name: 'monCostsReport', title: 'Report' }
@@ -93,9 +99,9 @@ var appStores = [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
       { name: 'amount', title: 'Amount', type: 'num', required: true, align: 'right' },
-      { name: 'currencyId', title: 'Currency', type: 'select', required: true, align: 'center', default: [9], source: { name: 'MON_Currencies', property: 'code' }},
-      { name: 'desc', title: 'Description', type: 'text' },
-      { name: 'eur', title: 'EUR', type: 'calc', align: 'right', funcName: 'amountInEUR' }
+      { name: 'currencyId', title: 'Code', type: 'select', required: true, align: 'center', default: [9], source: { name: 'MON_Currencies', property: 'code' }},
+      { name: 'eur', title: 'EUR', type: 'calc', align: 'right', funcName: 'amountInEUR' },
+      { name: 'desc', title: 'Description', type: 'text' }
     ]
   },
   { name: 'MON_Debts', id: 22, title: 'Debts', orderBy: 'date', orderAsc: false,
@@ -105,7 +111,7 @@ var appStores = [
       { name: 'payerId', title: 'Payer', type: 'select', required: true, source: { name: 'GLO_People', property: 'name' }},
       { name: 'debtorId', title: 'Debtor', type: 'select', required: true, source: { name: 'GLO_People', property: 'name' }},
       { name: 'amount', title: 'Amount', type: 'num', required: true, align: 'right' },
-      { name: 'currencyId', title: 'Currency', type: 'select', required: true, align: 'center', default: [8], source: { name: 'MON_Currencies', property: 'code' }},
+      { name: 'currencyId', title: 'Code', type: 'select', required: true, align: 'center', default: [8], source: { name: 'MON_Currencies', property: 'code' }},
       { name: 'desc', title: 'Description', type: 'text' }
     ],
     functions: [
@@ -131,7 +137,7 @@ var appStores = [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
       { name: 'amount', title: 'Amount', type: 'num', required: true, align: 'right' },
-      { name: 'currencyId', title: 'Currency', type: 'select', required: true, align: 'center', source: { name: 'MON_Currencies', property: 'code' }}
+      { name: 'currencyId', title: 'Code', type: 'select', required: true, align: 'center', source: { name: 'MON_Currencies', property: 'code' }}
     ]
   },
   { name: 'MON_Rates', id: 26, title: 'Rates',
@@ -139,7 +145,7 @@ var appStores = [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
       { name: 'amount', title: 'Amount', type: 'num', required: true, align: 'right' },
-      { name: 'currencyId', title: 'Currency', type: 'select', required: true, align: 'center', source: { name: 'MON_Currencies', property: 'code' }}
+      { name: 'currencyId', title: 'Code', type: 'select', required: true, align: 'center', source: { name: 'MON_Currencies', property: 'code' }}
     ]
   },
   { name: 'CAR_Drives', id: 30, title: 'Drives', orderBy: 'kmTotal', orderAsc: false, onSaveFunc: 'carUpdatePricePerDrives',
@@ -160,7 +166,7 @@ var appStores = [
       { name: 'kmTotal', title: 'Total', type: 'int', required: true, align: 'right' },
       { name: 'liters', title: 'Liters', type: 'num', required: true, align: 'right' },
       { name: 'pricePerLiter', title: 'Price', type: 'num', required: true, align: 'right' },
-      { name: 'currencyId', title: 'Currency', type: 'select', required: true, align: 'center', source: { name: 'MON_Currencies', property: 'code' }},
+      { name: 'currencyId', title: 'Code', type: 'select', required: true, align: 'center', source: { name: 'MON_Currencies', property: 'code' }},
       { name: 'fullTank', title: 'Full', type: 'bool' },
       { name: 'consumption', title: 'Consumption', type: 'readOnly', align: 'right' }
     ]

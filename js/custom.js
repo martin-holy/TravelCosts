@@ -400,8 +400,8 @@ monDebtsCalc = async () => {
     { name: "payerId", title: "Payer", source: { name: "GLO_People", property: "name" }},
     { name: "debtorId", title: "Debtor", source: { name: "GLO_People", property: "name" }},
     { name: "eurCalc", title: "EUR", align: "right" }]};
-  aaf.linkStores(form);
-  aaf.createGrid(form, pairs, false);
+  await aaf.linkStores(form);
+  document.getElementById('grid').innerHTML = await aaf.getGrid(form, pairs, false);
 };
 
 monGetTransportData = async (personId) => {
