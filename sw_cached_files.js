@@ -1,4 +1,4 @@
-const cacheName = 'v1';
+const cacheName = 'TravelCosts_v1';
 
 // Call Install Event
 self.addEventListener('install', e => {
@@ -12,7 +12,7 @@ self.addEventListener('install', e => {
         '/TravelCosts/index.html',
         '/TravelCosts/manifest.json',
         '/TravelCosts/css/dark.css',
-        '/TravelCosts/img/icon-128x128.png',
+        '/TravelCosts/img/icon-144x144.png',
         '/TravelCosts/js/AppsAndForms.js',
         '/TravelCosts/js/custom.js',
         '/TravelCosts/js/extensions.js',
