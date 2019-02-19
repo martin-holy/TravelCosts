@@ -1,7 +1,7 @@
 var aaf = aaf || {
   currentForm: {},
   db: null,
-  dbName: "AppsAndForms",
+  dbName: "TravelCosts",
   dbVersion: 1,
   dbSchema: [],
 
@@ -163,7 +163,7 @@ var aaf = aaf || {
         url = URL.createObjectURL(file);
   
     a.href = url;
-    a.download = "dataExport.json";
+    a.download = `travelCostsExport_${new Date().toYMD()}`;
     document.body.appendChild(a);
     a.click();
     setTimeout(() => {

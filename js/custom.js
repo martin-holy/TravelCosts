@@ -452,41 +452,54 @@ monCostsReport = async () => {
   let costTypes = Array.from(await aaf.getStoreRecords('MON_CostsTypes')).orderBy('name');
 
   if (document.getElementById('__rep_CostsReport') == null) {
-    let forCreate = [],
-        forSet = [],
-        typesSelect = xSelect('__rep_costTypeId');
+    let people = Array.from(await aaf.getStoreRecords('GLO_People')).orderBy('name'),
+        types = [],
+        typesSet = [],
+        selectTypes = xSelect('__rep_costTypeId'),
+        selectPerson = xSelect('__rep_personId'),
+        selectGroupBy = xSelect('__rep_groupBy'),
+        divRep = document.createElement('div'),
+        divRepData = document.createElement('div'),
+        divSelects = document.createElement('div'),
+        divTypes = document.createElement('div');
 
-    costTypes.forEach(x => {
-      forCreate.push({value: x.id, name: x.name, bgColor: x.bgColor});
-      forSet.push(x.id);
-    });
+    for (let x of costTypes) {
+      types.push({value: x.id, name: x.name, bgColor: x.bgColor});
+      typesSet.push(x.id);
+    }
 
-    typesSelect.create(forCreate, true, true);
-    typesSelect.set(forSet);
-    typesSelect.element.dataset.onchange = 'monCostsReport';
+    people.forEach(x => x.value = x.id);
+    selectPerson.create(people, false, true);
+    selectPerson.set([1]);
+    selectPerson.element.dataset.onchange = 'monCostsReport';
 
-    document.getElementById('treeView').innerHTML = `
-      <div id="__rep_CostsReport">
-        <div>
-          <select id="__rep_groupBy" onchange="monCostsReport();">
-            <option value="1">1 Month</option>
-            <option value="3">3 Months</option>
-            <option value="6">6 Months</option>
-            <option value="12">1 Year</option>
-          </select>
-          ${typesSelect.element.outerHTML}
-        </div>
-        <div id="__rep_CostsReportData"></div>
-      </div>`;
- 
+    selectGroupBy.create([{value:1,name:'1 Month'},{value:3,name:'3 Months'},{value:6,name:'6 Months'},{value:12,name:'1 Year'}], false);
+    selectGroupBy.set([1]);
+    selectGroupBy.element.dataset.onchange = 'monCostsReport';
+
+    selectTypes.create(types, true, true);
+    selectTypes.set(typesSet);
+    selectTypes.element.dataset.onchange = 'monCostsReport';
+
+    divSelects.appendChild(selectPerson.element);
+    divSelects.appendChild(selectGroupBy.element);
+    divTypes.appendChild(selectTypes.element);
+    divRep.appendChild(divSelects);
+    divRep.appendChild(divTypes);
+    divRep.appendChild(divRepData);
+    divRep.id = '__rep_CostsReport';
+    divRepData.id = '__rep_CostsReportData';
+
+    document.getElementById('treeView').innerHTML = '';
+    document.getElementById('treeView').appendChild(divRep);
   }
 
   let selectedCostTypes = xSelect('__rep_costTypeId').get();
   if (selectedCostTypes.length == 0) return;
   
-  let groupBy = document.getElementById('__rep_groupBy').value,
+  let groupBy = xSelect('__rep_groupBy').get()[0],
       records = await aaf.getStoreRecords('MON_Costs'),
-      transportData = await monGetTransportData(1),  // 1 = Martin //TODO get it from settings
+      transportData = await monGetTransportData(xSelect('__rep_personId').get()[0]),  // 1 = Martin //TODO get it from settings
       allRecords = records.concat(transportData),
       years = [],
       years2 = [];
@@ -533,7 +546,8 @@ monCostsReport = async () => {
 
     dataPart = dataYear.parts.find(x => x.name == part);
     if (dataPart === undefined) {
-      dataPart = { name: part, sum: 0, types: [] };
+      let days = new Date(Number.parseInt(year), month, 0).getDate();
+      dataPart = { name: part, sum: 0, types: [], days: days};
       dataYear.parts.push(dataPart);
     }
 
@@ -550,7 +564,7 @@ monCostsReport = async () => {
   }
   //end old version
 
-  let output = '<table>',
+  let trs = [],
       currentYear;
   years.orderBy('name', false);
   for (let year of years) {
@@ -558,32 +572,33 @@ monCostsReport = async () => {
     for (let part of year.parts) {
       let typesSum = 0,
           lastTypeOffset = 0,
-          svg = '';
+          svg = [],
+          tds = []
       part.types.orderBy('name');
+
       for (let type of part.types) {
-        svg += `<rect x="${lastTypeOffset}" width="${type.sum.round(0)}" height="100%" fill="${type.bgColor}" />`;
+        svg.push(`<rect x="${lastTypeOffset}" width="${type.sum.round(0)}" height="100%" fill="${type.bgColor}" />`);
         typesSum += type.sum;
         lastTypeOffset += type.sum.round(0);
       }
 
-      output += '<tr>';
-
       if (currentYear != year) {
         currentYear = year;
-        output += `<td class="bubbleTd" rowspan="${year.parts.length}">${year.name}</td>
-                   <td class="bubbleTd" rowspan="${year.parts.length}">${year.sum.round(0)}</td>`;
+        tds.push(`<td class="bubbleTd" rowspan="${year.parts.length}">${year.name}</td>`);
+        tds.push(`<td class="bubbleTd" rowspan="${year.parts.length}">${year.sum.round(0)}</td>`);
       }
 
-      if (groupBy != 12)
-        output += `
-          <td class="bubbleTd">${part.name.convertToRoman()}</td>
-          <td class="bubbleTd">${typesSum.round(0)}</td>`;
-          
-      output += `<td><svg height="20px" width="${typesSum.round(0)}px" xmlns="http://www.w3.org/2000/svg" display="block">${svg}</svg></td></tr>`;
+      if (groupBy != 12) {
+        tds.push(`<td class="bubbleTd">${part.name.convertToRoman()}</td>`);
+        tds.push(`<td class="bubbleTd">${typesSum.round(0)}</td>`);
+        tds.push(`<td class="bubbleTd">${(typesSum / part.days).round(1)}</td>`);
+      }
+
+      tds.push(`<td><svg height="20px" width="${typesSum.round(0)}px" xmlns="http://www.w3.org/2000/svg" display="block">${svg}</svg></td>`);
+      trs.push(`<tr>${tds.join('')}</tr>`)
     }
   }
-  output += '</table>';
-  document.getElementById('__rep_CostsReportData').innerHTML = output;
 
+  document.getElementById('__rep_CostsReportData').innerHTML = `<table>${trs.join('')}</table>`;
   aaf.contentTabs.active('treeView');
 };
