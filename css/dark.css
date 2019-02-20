@@ -223,6 +223,7 @@ ul {
   border: 1px solid black;
   border-radius: 2px;
   margin-top: 5px;
+  display: flex;
 }
 
 #edit button {
