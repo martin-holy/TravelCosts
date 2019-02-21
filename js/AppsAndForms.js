@@ -559,10 +559,10 @@ var aaf = aaf || {
       var request = this.db.transaction([this.currentForm.name], "readwrite")
                           .objectStore(this.currentForm.name)
                           .delete(this.currentForm.currentRecord.id);
-      request.onsuccess = () => {
+      request.onsuccess = async () => {
         this.hideEdit();
         delete this.currentForm.data;
-        document.getElementById('grid').innerHTML = this.getGrid();
+        document.getElementById('grid').innerHTML = await this.getGrid();
       };
     }
   }

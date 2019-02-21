@@ -1,4 +1,6 @@
-const cacheName = 'TravelCosts_v1';
+const appName = 'TravelCosts',
+      appVersion = 'v1',
+      cacheName = `${appName}_${appVersion}`;
 
 // Call Install Event
 self.addEventListener('install', e => {
@@ -30,7 +32,7 @@ self.addEventListener('activate', e => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cache => {
-          if (cache != cacheName) {
+          if (cache.startsWith(appName) && cache != cacheName) {
             console.log('Service Worker: Clearing Old Cache');
             return caches.delete(cache);
           }
@@ -43,10 +45,10 @@ self.addEventListener('activate', e => {
 
 // Call Fetch Event
 self.addEventListener('fetch', e => {
-  e.respondWith(async function() {
-    if (navigator.onLine) return fetch(e.request);
-    const cachedResponse = await caches.match(e.request);
-    if (cachedResponse) return cachedResponse;
-    return fetch(e.request);
-  }());
+  //network falling back to cache
+  e.respondWith(
+    fetch(e.request).catch(function() {
+      return caches.match(e.request);
+    })
+  );
 });
