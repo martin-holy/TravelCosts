@@ -2,7 +2,7 @@ var aaf = aaf || {
   currentForm: {},
   db: null,
   dbName: "TravelCosts",
-  dbVersion: 1,
+  dbVersion: 2,
   dbSchema: [],
 
   // log
@@ -15,7 +15,7 @@ var aaf = aaf || {
   openDb: function() {
     this.log("openDb ...");
     let isUpdgradeNeeded = false,
-        req = window.indexedDB.open(this.dbName, 1);
+        req = window.indexedDB.open(this.dbName, 1); // version always 1
   
     req.onsuccess = (e) => {
       this.db = e.target.result;
@@ -82,7 +82,7 @@ var aaf = aaf || {
   
   dbLoadFinished: async function() {
     this.log("openDb: Load Finished");
-    this.dbSchema = await this.getStoreRecords("ADM_AppStores");
+    this.dbSchema = await this.getStoreRecords('ADM_AppStores');
     for (let s of this.dbSchema) await this.linkStores(s);
     await this.updateDbSchema();
     this.createAppMap();
@@ -109,7 +109,18 @@ var aaf = aaf || {
       }
 
       if (settings.dbVersion < 2) {
-        //...
+        let fn = function (core) {
+          return new Promise(async (resolve, reject) => {
+            let tx = core.db.transaction(['ADM_AppStores'], 'readwrite'),
+            store = tx.objectStore('ADM_AppStores'),
+            storeSchema = await core.getStoreRecordById('ADM_AppStores', 30); // CAR_Drives
+
+            tx.oncomplete = resolve();
+            storeSchema.functions = [{ name: 'carDrivesReport', title: 'Report' }];
+            store.put(storeSchema);
+          }
+        )};
+        await fn(this);
       }
 
       if (settings.dbVersion < 3) {
@@ -145,8 +156,9 @@ var aaf = aaf || {
         </table>`);
     }
   
-    document.getElementById("mainContent").innerHTML = `<div id="appMap">${groups.join('')}</div>`;
+    document.getElementById('mainContent').innerHTML = `<div id="appMap">${groups.join('')}</div>`;
     document.getElementById('title').innerHTML = 'Travel Costs';
+    document.getElementById('menu').innerHTML = '<li onclick="aaf.testFunc();aaf.menuButtonClick();">Test Func</li>';
   },
   
   exportData: async function() {
@@ -565,6 +577,73 @@ var aaf = aaf || {
         document.getElementById('grid').innerHTML = await this.getGrid();
       };
     }
+  },
+
+  canvas: {
+    drawRect: function drawRect(ctx, X, Y, width, height, fillStyle, strokeStyle, angle) {
+      let tX = X, tY = Y;
+      if (angle != 0 || angle !== undefined) {
+        ctx.save();
+        ctx.translate(tX, tY);
+        ctx.rotate(angle * Math.PI / 180);
+        X = 0;
+        Y = 0;
+      }
+      if (fillStyle !== undefined) {
+        ctx.fillStyle = fillStyle;
+        ctx.fillRect(X, Y, width, height);
+      }
+      if (strokeStyle !== undefined) {
+        ctx.strokeStyle = strokeStyle;
+        ctx.strokeRect(X, Y, width, height);
+      }
+      if (angle != 0 || angle !== undefined) {
+        ctx.translate(-tX, -tY);
+        ctx.restore();
+      }
+    },
+    
+    drawText: function drawText(ctx, text, X, Y, fillStyle, strokeStyle, font, angle) {
+      let tX = X, tY = Y;
+      if (angle != 0 || angle !== undefined) {
+        ctx.save();
+        ctx.translate(tX, tY);
+        ctx.rotate(angle * Math.PI / 180);
+        X = 0;
+        Y = 0;
+      }
+      if (font !== undefined) ctx.font = font;
+      if (fillStyle !== undefined) {
+        ctx.fillStyle = fillStyle;
+        ctx.fillText(text, X, Y);
+      }
+      if (strokeStyle !== undefined) {
+        ctx.strokeStyle = strokeStyle;
+        ctx.strokeText(text, X, Y);
+      }
+      if (angle != 0 || angle !== undefined) {
+        ctx.translate(-tX, -tY);
+        ctx.restore();
+      }
+    }
+  },
+
+  testFunc: async function() {
+    /*let drives = await this.getStoreRecords('CAR_Drives'),
+        data = [];
+    for (let d of drives) {
+      let month = d.date.substring(0, 7),
+          item = data.find(x => x.date == month);
+      if (item == null) {
+        item = { date: month, count: 0 };
+        data.push(item);
+      }
+      item.count++;
+    }*/
+    this.contentTabs.clear();
+    this.contentTabs.add('treeView');
+    this.contentTabs.active('treeView');
+    carDrivesReport();
   }
 };
 

@@ -157,6 +157,9 @@ var appStores = [
       { name: 'eur', title: 'EUR', type: 'readOnly', align: 'right' },
       { name: 'desc', title: 'Description', type: 'text' },
       { name: 'people', title: 'People', type: 'multiSelect', required: true, default: [1,2], source: { name: 'GLO_People', property: 'name' }}
+    ],
+    functions: [
+      { name: 'carDrivesReport', title: 'Report' }
     ]
   },
   { name: 'CAR_Refueling', id: 31, title: 'Refueling', orderBy: 'date', orderAsc: false, onSaveFunc: 'carCalcConsumptions',

@@ -146,48 +146,49 @@ var xSelect = function(id) {
 
     create: function (data, multi = true, withDataSource = false) {
       let options = [],
-          elm = document.createElement("div");
+          elm = document.createElement('div');
       
-      data.forEach(x => options.push(`<li value="${x.value}" onclick="xSelect('${id}').select(this);">${x.name}</li>`));
+      data.forEach(x => options.push(`<li value='${x.value}' onclick="xSelect('${id}').select(this);">${x.name}</li>`));
       elm.id = id;
-      elm.className = "xSelect";
+      elm.className = 'xSelect';
       elm.dataset.multi = multi;
       if (withDataSource) elm.dataset.dataSource = JSON.stringify(data);
       elm.innerHTML =
         `<div onclick="xSelect('${id}').show();">
           <div class="selectedOptions"></div>
-          <div class="button">⏷</div>
+          <div class="button">▼</div>
         </div>
-        <ul>${options.join("")}</ul>`;
+        <ul>${options.join('')}</ul>`;
 
       this.element = elm;
     },
 
     get: function() {
       let vals = [];
-      this.element.querySelectorAll(".optionSelected").forEach(x => vals.push(x.value));
+      this.element.querySelectorAll('.optionSelected').forEach(x => vals.push(x.value));
       return vals;
     },
 
     set: function (data) {
-      this.element.querySelectorAll("li").forEach(x => 
-        x.classList.toggle("optionSelected", data.includes(x.value)));
+      this.element.querySelectorAll('li').forEach(x => 
+        x.classList.toggle('optionSelected', data.includes(x.value)));
       this.list();
     },
 
     select: function(li) {
-      if (this.element.dataset.multi == "false") {
-        this.element.querySelectorAll("li").forEach(x => x.classList.remove("optionSelected"));
+      if (this.element.dataset.multi == 'false') {
+        this.element.querySelectorAll('li').forEach(x => x.classList.remove('optionSelected'));
         this.show();
       }
-      li.classList.toggle("optionSelected");
+      li.classList.toggle('optionSelected');
       this.list();
     },
 
     list: function() {
       let out = [],
           dataSource = JSON.parse(this.element.dataset.dataSource || null);
-      this.element.querySelectorAll(".optionSelected").forEach(x => {
+
+      this.element.querySelectorAll('.optionSelected').forEach(x => {
         let style = '';
 
         if (dataSource != null) {
@@ -198,16 +199,40 @@ var xSelect = function(id) {
 
         out.push(`<span${style}>${x.textContent}</span>`);
       });
-      this.element.querySelector(".selectedOptions").innerHTML = out.join('');
+
+      this.element.querySelector('.selectedOptions').innerHTML = out.join('');
+
       if (this.element.dataset.onchange)
         window[this.element.dataset.onchange]();
     },
 
     show: function() {
-      let ul = this.element.querySelector("ul"),
-          visible = ul.style.visibility == "visible";
-      ul.style.visibility = visible ? "hidden" : "visible";
-      this.element.querySelector(".button").innerHTML = visible ? "⏷" : "✔";
+      let ul = this.element.querySelector('ul'),
+          hide = ul.style.visibility == 'visible';
+          
+      ul.style.visibility = hide ? 'hidden' : 'visible';
+      this.element.querySelector('.button').innerHTML = hide ? '▼' : '✔';
+      
+      if (hide) window.removeEventListener('mouseup', this.xSelectClose);
+      else window.addEventListener('mouseup', this.xSelectClose);
+    },
+
+    xSelectClose: function(e) {
+      let currentElm = e.target,
+          select;
+
+      while (currentElm) {
+        if (currentElm.classList.contains('xSelect')) {
+          select = currentElm;
+          break;
+        }
+        currentElm = currentElm.parentElement;
+      }
+
+      for (let elm of Array.from(document.getElementsByClassName('xSelect'))) {
+        if (elm.querySelector('ul').style.visibility == 'visible' && elm != select) 
+          xSelect(elm.id).show(); // hide
+      }
     }
   };
 }

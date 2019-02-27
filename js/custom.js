@@ -264,6 +264,68 @@ carUpdatePricePerDrives = () => {
   });
 };
 
+carDrivesReport = async () => {
+  //Init Canvas
+  let canvas = document.createElement('canvas'),
+      ctx = canvas.getContext('2d'),
+      dpr = window.devicePixelRatio,
+      width = 400,
+      height = 10000;
+
+  width = Math.ceil(width * dpr);
+  height = Math.ceil(height * dpr);
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.width = `${width / dpr}px`;
+  canvas.style.height = `${height / dpr}px`;
+  ctx.scale(dpr, dpr);
+
+  //Draw Drives
+  const pxPerDay = 6,
+        dateNow = new Date().toYMD(),
+        drvsLeftOffset = 100
+        drvTextBoxHeight = 16;
+  let drives = Array.from(await aaf.getStoreRecords('CAR_Drives')).orderBy('kmTotal', false),
+      lastDate = new Date().addDays(1).toYMD(),
+      lastBottom = 0;
+  
+  ctx.font = '12px sans-serif';
+  for (const drv of drives) {
+    const daysFromNow = numberOfDaysBetween({ dateFrom: drv.date, dateTo: dateNow }),
+          daysFromLast = numberOfDaysBetween({ dateFrom: lastDate, dateTo: dateNow });
+    let drvHeight = (daysFromNow - daysFromLast) * pxPerDay,
+        drvTop = daysFromLast * pxPerDay,
+        textTop = drvTop + Math.ceil(drvHeight / 2) - drvTextBoxHeight / 2;
+    lastDate = drv.date;
+    aaf.canvas.drawRect(ctx, 50, drvTop, 20, drvHeight, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+
+    if (textTop < lastBottom) 
+      textTop = lastBottom;
+    lastBottom = textTop + drvTextBoxHeight;
+    aaf.canvas.drawRect(ctx, drvsLeftOffset, textTop, ctx.measureText(drv.desc).width + 4, drvTextBoxHeight, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    aaf.canvas.drawText(ctx, drv.desc, drvsLeftOffset + 2, textTop + 12, 'rgba(255, 255, 255, 1)');
+
+    ctx.beginPath();
+    ctx.moveTo(70, drvTop + Math.ceil(drvHeight / 2));
+    ctx.lineTo(drvsLeftOffset, textTop + drvTextBoxHeight / 2);
+    ctx.stroke();
+
+  }
+
+
+  let divRep = document.createElement('div'),
+      divRepData = document.createElement('div');
+
+  divRep.id = '__rep_DrivesReport';
+  divRepData.id = '__rep_DrivesReportData';
+  divRepData.appendChild(canvas);
+  divRep.appendChild(divRepData);
+
+  document.getElementById('treeView').innerHTML = '';
+  document.getElementById('treeView').appendChild(divRep);
+  aaf.contentTabs.active('treeView');
+}
+
 combineDateIntervals = (arrays) => {
   let from = new Set(),
       to = new Set();
