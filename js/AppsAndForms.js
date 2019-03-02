@@ -228,18 +228,30 @@ var aaf = aaf || {
         resolve(sorted && store.orderBy ? store.data.orderBy(store.orderBy, store.orderAsc) : store.data);
         return;
       } 
-  
+
       let tx = this.db.transaction([name], "readonly"),
+          request = tx.objectStore(name).getAll();
+          
+      request.onsuccess = (e) => {
+        if (store) {
+          store.data = sorted && store.orderBy ? e.target.result.orderBy(store.orderBy, store.orderAsc) : e.target.result;
+          resolve(store.data); 
+        }
+        else //app load, this.dbSchema is empty now, this is data for this.dbSchema
+          resolve(e.target.result);
+      };
+  
+      /*let tx = this.db.transaction([name], "readonly"),
           request = tx.objectStore(name).openCursor(),
           data = [];
-  
+          console.time('datapush');
       request.onsuccess = (e) => {
         let cursor = e.target.result;
-  
         if (cursor) {
           data.push(cursor.value);
           cursor.continue();
         } else {
+          console.timeEnd('datapush');
           if (store) {
             store.data = sorted && store.orderBy ? data.orderBy(store.orderBy, store.orderAsc) : data;
             resolve(store.data); 
@@ -247,7 +259,7 @@ var aaf = aaf || {
           else //app load, this.dbSchema is empty now, this is data for this.dbSchema
             resolve(data);
         }
-      };
+      };*/
   
       request.onerror = (e) => {
         reject(e.target.errorCode);
@@ -271,7 +283,9 @@ var aaf = aaf || {
   
     this.currentForm = this.dbSchema.find(store => store.name == frm);
     this.createMenu();
+    console.time('getGrid');
     document.getElementById('grid').innerHTML = await this.getGrid();
+    console.timeEnd('getGrid');
     this.createEdit();
     document.getElementById('title').innerHTML = this.currentForm.title;
   },
@@ -332,7 +346,9 @@ var aaf = aaf || {
     }
   
     let tbody = [];
+    console.time('getStoreRecords');
     if (gridItems == null) gridItems = await this.getStoreRecords(form.name, true);
+    console.timeEnd('getStoreRecords');
   
     for (let item of gridItems) {
       let tds = [];
@@ -372,7 +388,7 @@ var aaf = aaf || {
       }
       tbody.push(`<tr${editable ? ` onclick="aaf.editRecord(${item.id});"` : ''}>${tds.join('')}</tr>`);
     }
-  
+
     return `<table class="grid"><thead><tr>${thead.join('')}</tr></thead><tbody>${tbody.join('')}</tbody></table>`;
   },
   
