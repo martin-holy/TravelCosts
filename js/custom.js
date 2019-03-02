@@ -666,7 +666,7 @@ monCostsReport = async () => {
 
 monUpdateRates = async () => {
   try {
-    let response = await fetch('http://openexchangerates.org/api/latest.json?app_id=87daff001ce54adcb026f28899a098ca');
+    let response = await fetch('https://openexchangerates.org/api/latest.json?app_id=87daff001ce54adcb026f28899a098ca');
     if (response.ok) {
       let json = await response.json(),
           currencies = await aaf.getStoreRecords('MON_Currencies');
@@ -710,7 +710,7 @@ monUpdateMissingRates = async () => {
   // Get Historical Rates
   try {
     for (let rate of newRates) {
-      let response = await fetch(`http://openexchangerates.org/api/historical/${rate.date}.json?app_id=87daff001ce54adcb026f28899a098ca`);
+      let response = await fetch(`https://openexchangerates.org/api/historical/${rate.date}.json?app_id=87daff001ce54adcb026f28899a098ca`);
       if (!response.ok) continue;
       let json = await response.json(),
           code = currencies.find(x => x.id == rate.currencyId).code;
