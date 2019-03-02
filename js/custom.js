@@ -193,7 +193,7 @@ carUpdateDieselPricePerKm = () => {
         }
       }
       //Deleting old ones
-      if (!found) store.delete(ppk);
+      if (!found) store.delete(ppk.id);
     }
 
     //Inserting new ones
