@@ -236,3 +236,15 @@ var xSelect = function(id) {
     }
   };
 }
+
+var getHttpRequest = function (url) {
+  return new Promise((resolve, reject) => {
+    let httpRequest = new XMLHttpRequest();
+    httpRequest.onreadystatechange = () => {
+      if (this.readyState == 4 && this.status == 200)
+        resolve(this.responseText);
+    }
+    httpRequest.open('GET', url, true);
+    httpRequest.send();
+  });
+};

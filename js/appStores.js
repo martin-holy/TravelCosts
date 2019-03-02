@@ -129,15 +129,12 @@ var appStores = [
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'code', title: 'Code', type: 'text', required: true },
-      { name: 'name', title: 'Name', type: 'text', required: true }
-    ]
-  },
-  { name: 'MON_RatesList', id: 25, title: 'Rates List',
-    properties: [
-      { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
+      { name: 'name', title: 'Name', type: 'text', required: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
-      { name: 'amount', title: 'Amount', type: 'num', required: true, align: 'right' },
-      { name: 'currencyId', title: 'Code', type: 'select', required: true, align: 'center', source: { name: 'MON_Currencies', property: 'code' }}
+      { name: 'amount', title: 'Amount', type: 'num', required: true, align: 'right' }
+    ],
+    functions: [
+      { name: 'monUpdateRates', title: 'Update Rates' }
     ]
   },
   { name: 'MON_Rates', id: 26, title: 'Rates',
@@ -146,6 +143,9 @@ var appStores = [
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
       { name: 'amount', title: 'Amount', type: 'num', required: true, align: 'right' },
       { name: 'currencyId', title: 'Code', type: 'select', required: true, align: 'center', source: { name: 'MON_Currencies', property: 'code' }}
+    ],
+    functions: [
+      { name: 'monUpdateMissingRates', title: 'Update Rates' }
     ]
   },
   { name: 'CAR_Drives', id: 30, title: 'Drives', orderBy: 'kmTotal', orderAsc: false, onSaveFunc: 'carUpdatePricePerDrives',

@@ -11,8 +11,8 @@ amountInEUR = async (rec, roundTo = 2) => {
       rate = rates.find(r => r.date == rec.date && r.currencyId == rec.currencyId);
   
   if (rate === undefined) {
-    let ratesList = await aaf.getStoreRecords('MON_RatesList');
-    rate = ratesList.find(r => r.currencyId == rec.currencyId);
+    let currencies = await aaf.getStoreRecords('MON_Currencies');
+    rate = currencies.find(x => x.id == rec.currencyId);
   }
 
   return rate === undefined ? 0 : (rec.amount / rate.amount).round(roundTo);
@@ -229,15 +229,14 @@ carUpdatePricePerDrives = () => {
   return new Promise(async (resolve) => {
     await carUpdateAmortizationPricePerKm();
 
-    const storeName = 'CAR_Drives';
-    let arrDrives = Array.from(await aaf.getStoreRecords(storeName)).orderBy('kmTotal'),
+    let arrDrives = Array.from(await aaf.getStoreRecords('CAR_Drives')).orderBy('kmTotal'),
         arrPricePerKm = await aaf.getStoreRecords('CAR_PricePerKm'),
-        tx = aaf.db.transaction([storeName], 'readwrite'),
-        store = tx.objectStore(storeName),
+        tx = aaf.db.transaction(['CAR_Drives'], 'readwrite'),
+        store = tx.objectStore('CAR_Drives'),
         kmFrom = 156327; // stav při koupení auta
 
     tx.oncomplete = async () => {
-      delete aaf.dbSchema.find(s => s.name == storeName).data;
+      delete aaf.dbSchema.find(s => s.name == 'CAR_Drives').data;
       resolve();
     };
 
@@ -663,4 +662,80 @@ monCostsReport = async () => {
 
   document.getElementById('__rep_CostsReportData').innerHTML = `<table>${trs.join('')}</table>`;
   aaf.contentTabs.active('treeView');
+};
+
+monUpdateRates = async () => {
+  try {
+    let response = await fetch('http://openexchangerates.org/api/latest.json?app_id=87daff001ce54adcb026f28899a098ca');
+    if (response.ok) {
+      let json = await response.json(),
+          currencies = await aaf.getStoreRecords('MON_Currencies');
+      for (let rec of currencies) {
+        rec.date = new Date().toYMD();
+        rec.amount = (json.rates[rec.code] / json.rates['EUR']).toFixed(4);
+      }
+      await aaf.iudStoreData('update', 'MON_Currencies', currencies);
+      aaf.dbSchema.find(x => x.name == 'MON_Currencies').data = currencies;
+      document.getElementById('grid').innerHTML = await aaf.getGrid();
+    }
+  } catch (error) {
+    aaf.log(error);
+    return;
+  }
+};
+
+monUpdateMissingRates = async () => {
+  let costsToUpdate = [],
+      incomesToUpdate = [],
+      newRates = [],
+      oldRates = await aaf.getStoreRecords('MON_Rates'),
+      currencies = await aaf.getStoreRecords('MON_Currencies');
+
+  for (const storeName of ['CAR_Refueling', 'MON_Costs', 'MON_Incomes', 'MON_Debts']) {
+    let storeData = await aaf.getStoreRecords(storeName),
+        toUpdate = [];
+    for (const rec of storeData) {
+      if (rec.currencyId == 9) continue; // EUR
+      if (oldRates.find(x => x.date == rec.date && x.currencyId == rec.currencyId) != undefined) continue;
+      toUpdate.push(rec);
+      if (newRates.find(x => x.date == rec.date && x.currencyId == rec.currencyId) != undefined) continue;
+      newRates.push({date: rec.date, currencyId: rec.currencyId});  
+    }
+    switch (storeName) {
+      case 'MON_Costs': costsToUpdate = toUpdate; break;
+      case 'MON_Incomes': incomesToUpdate = toUpdate;
+    }
+  }
+  
+  // Get Historical Rates
+  try {
+    for (let rate of newRates) {
+      let response = await fetch(`http://openexchangerates.org/api/historical/${rate.date}.json?app_id=87daff001ce54adcb026f28899a098ca`);
+      if (!response.ok) continue;
+      let json = await response.json(),
+          code = currencies.find(x => x.id == rate.currencyId).code;
+      rate.amount = (json.rates[code] / json.rates['EUR']).toFixed(4);
+    }
+  } catch (error) {
+    aaf.log(error);
+    return;
+  }  
+
+  let updateEUR = function (data) {
+    for (let rec of data) {
+      let rate = newRates.find(x => x.date == rec.date && x.currencyId == rec.currencyId);
+      rec.eur = (rec.amount / rate.amount).round(2);
+    }
+  };
+
+  updateEUR(costsToUpdate);
+  updateEUR(incomesToUpdate);
+  await aaf.iudStoreData('update', 'MON_Costs', costsToUpdate);
+  await aaf.iudStoreData('update', 'MON_Incomes', incomesToUpdate);
+  await aaf.iudStoreData('insert', 'MON_Rates', newRates);
+  delete aaf.dbSchema.find(x => x.name == 'MON_Costs').data;
+  delete aaf.dbSchema.find(x => x.name == 'MON_Incomes').data;
+  delete aaf.dbSchema.find(x => x.name == 'MON_Rates').data;
+  await carUpdateDieselPricePerKm();
+  await carUpdatePricePerDrives();
 };

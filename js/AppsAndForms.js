@@ -2,7 +2,7 @@ var aaf = aaf || {
   currentForm: {},
   db: null,
   dbName: "TravelCosts",
-  dbVersion: 2,
+  dbVersion: 5,
   dbSchema: [],
 
   // log
@@ -14,6 +14,7 @@ var aaf = aaf || {
   // openDb
   openDb: function() {
     this.log("openDb ...");
+    console.time('openDb');
     let isUpdgradeNeeded = false,
         req = window.indexedDB.open(this.dbName, 1); // version always 1
   
@@ -23,6 +24,7 @@ var aaf = aaf || {
         this.log("Database error: " + e.target.errorCode, true);
       }
       this.log("openDb: done");
+      console.timeEnd('openDb');
       if (isUpdgradeNeeded) {
         this.insertUpdateInitDBData();
       } else {
@@ -49,24 +51,25 @@ var aaf = aaf || {
 
   // insertUpdateInitDBData
   insertUpdateInitDBData: async function() {
-    await this.insertStoreData('ADM_AppStores', appStores);
-    await this.insertStoreData('ADM_AppStoreGroups', [
-      { name: 'Administration', icon: '0x1F60E', index: 4, stores: [1,2] },
-      { name: 'Travel Costs & Incomes', icon: '0x1F92A', index: 1, stores: [20,21,22,23,24,25,26]},
-      { name: 'Car', icon: '0x1F3DE', index: 2, stores: [30,31,32,33,34,35]},
-      { name: 'Global', icon: '0x1F30D', index: 3, stores: [10,11,12,13]}
+    await this.iudStoreData('insert', 'ADM_AppStores', appStores);
+    await this.iudStoreData('insert', 'ADM_AppStoreGroups', [
+      { id: 1, name: 'Administration', icon: '0x1F60E', index: 4, stores: [1,2] },
+      { id: 2, name: 'Travel Costs & Incomes', icon: '0x1F92A', index: 1, stores: [20,21,22,23,24,26]},
+      { id: 3, name: 'Car', icon: '0x1F3DE', index: 2, stores: [30,31,32,33,34,35]},
+      { id: 4, name: 'Global', icon: '0x1F30D', index: 3, stores: [10,11,12,13]}
     ]);
-    await this.insertStoreData('ADM_AppSettings', [{ id: 1, dbVersion: this.dbVersion }]);
+    await this.iudStoreData('insert', 'ADM_AppSettings', [{ id: 1, dbVersion: this.dbVersion }]);
     this.dbLoadFinished();
   },
-  
-  insertStoreData: function(storeName, data) {
+
+  // insert, update and delete data from store based on action
+  iudStoreData: function(action, storeName, data) {
     return new Promise(async (resolve, reject) => {
       let tx = this.db.transaction([storeName], "readwrite"),
           store = tx.objectStore(storeName);
   
       tx.oncomplete = () => {
-        this.log("All data inserted/updated in database!");
+        this.log("All data updated in database!");
         resolve();
       };
   
@@ -75,8 +78,11 @@ var aaf = aaf || {
         reject();
       };
 
-      for (let d of data)
-        store.add(d);
+      switch (action) {
+        case 'insert': for (let d of data) store.add(d); break;
+        case 'update': for (let d of data) store.put(d); break;
+        case 'delete': for (let d of data) store.delete(d); break;
+      }
     });
   },
   
@@ -100,7 +106,7 @@ var aaf = aaf || {
   },
 
   updateDbSchema: function() {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve) => {
       let settings = await this.getStoreRecordById('ADM_AppSettings', 1);
 
       if (settings.dbVersion == this.dbVersion) {
@@ -108,31 +114,16 @@ var aaf = aaf || {
         return;
       }
 
-      if (settings.dbVersion < 2) {
-        let fn = function (core) {
-          return new Promise(async (resolve, reject) => {
-            let tx = core.db.transaction(['ADM_AppStores'], 'readwrite'),
-            store = tx.objectStore('ADM_AppStores'),
-            storeSchema = await core.getStoreRecordById('ADM_AppStores', 30); // CAR_Drives
-
-            tx.oncomplete = resolve();
-            storeSchema.functions = [{ name: 'carDrivesReport', title: 'Report' }];
-            store.put(storeSchema);
-          }
-        )};
-        await fn(this);
+      if (settings.dbVersion < 5) {
+        await this.iudStoreData('update', 'ADM_AppStores', appStores.filter(x => [24, 26].includes(x.id))); // MON_Currencies, MON_Rates
+        await this.iudStoreData('delete', 'ADM_AppStores', [25]); // MON_RatesList
+        let g = await this.getStoreRecordById('ADM_AppStoreGroups', 2);
+        g.stores = [20,21,22,23,24,26];
+        await this.iudStoreData('update', 'ADM_AppStoreGroups', [g]);
       }
 
-      if (settings.dbVersion < 3) {
-        //...
-      }
-
-      let tx = this.db.transaction(['ADM_AppSettings'], 'readwrite'),
-          store = tx.objectStore('ADM_AppSettings');
-        
-      tx.oncomplete = resolve();
       settings.dbVersion = this.dbVersion;
-      store.put(settings);
+      this.iudStoreData('update', 'ADM_AppSettings', [settings]).then(resolve());
     });
   },
   
@@ -201,8 +192,7 @@ var aaf = aaf || {
           let tx = this.db.transaction(storeNames, "readwrite");
       
           tx.oncomplete = () => {
-            this.log("Database import done!");
-            alert("Done");
+            this.log("Database import done!", true);
             resolve();
           };
       
