@@ -2,7 +2,7 @@ var aaf = aaf || {
   currentForm: {},
   db: null,
   dbName: "TravelCosts",
-  dbVersion: 5,
+  dbVersion: 6,
   dbSchema: [],
 
   // log
@@ -120,6 +120,10 @@ var aaf = aaf || {
         let g = await this.getStoreRecordById('ADM_AppStoreGroups', 2);
         g.stores = [20,21,22,23,24,26];
         await this.iudStoreData('update', 'ADM_AppStoreGroups', [g]);
+      }
+
+      if (settings.dbVersion < 6) {
+        await this.iudStoreData('update', 'ADM_AppStores', appStores.filter(x => x.id == 26)); // MON_Rates
       }
 
       settings.dbVersion = this.dbVersion;

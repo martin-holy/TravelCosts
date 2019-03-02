@@ -738,4 +738,5 @@ monUpdateMissingRates = async () => {
   delete aaf.dbSchema.find(x => x.name == 'MON_Rates').data;
   await carUpdateDieselPricePerKm();
   await carUpdatePricePerDrives();
+  aaf.log('Done', true);
 };

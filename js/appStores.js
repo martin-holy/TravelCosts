@@ -137,7 +137,7 @@ var appStores = [
       { name: 'monUpdateRates', title: 'Update Rates' }
     ]
   },
-  { name: 'MON_Rates', id: 26, title: 'Rates',
+  { name: 'MON_Rates', id: 26, title: 'Rates', orderBy: 'date', orderAsc: false,
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },

@@ -37,7 +37,6 @@ ul {
 }
 
 #mainContent {
-  height: calc(100% - 36px);
   overflow: auto;
 }
 
