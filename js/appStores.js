@@ -171,7 +171,10 @@ var appStores = [
       { name: 'pricePerLiter', title: 'Price', type: 'num', required: true, align: 'right' },
       { name: 'currencyId', title: 'Code', type: 'select', required: true, align: 'center', source: { name: 'MON_Currencies', property: 'code' }},
       { name: 'fullTank', title: 'Full', type: 'bool' },
-      { name: 'consumption', title: 'Consumption', type: 'readOnly', align: 'right' }
+      { name: 'consumption', title: 'l/100km', type: 'readOnly', align: 'right' }
+    ],
+    functions: [
+      { name: 'carRefuelingReport', title: 'Report' }
     ]
   },
   { name: 'CAR_PricePerKm', id: 32, title: 'Price per Km', orderBy: 'kmFrom', orderAsc: false,

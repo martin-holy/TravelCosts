@@ -2,7 +2,7 @@ var aaf = aaf || {
   currentForm: {},
   db: null,
   dbName: "TravelCosts",
-  dbVersion: 6,
+  dbVersion: 7,
   dbSchema: [],
 
   // log
@@ -124,6 +124,10 @@ var aaf = aaf || {
 
       if (settings.dbVersion < 6) {
         await this.iudStoreData('update', 'ADM_AppStores', appStores.filter(x => x.id == 26)); // MON_Rates
+      }
+
+      if (settings.dbVersion < 7) {
+        await this.iudStoreData('update', 'ADM_AppStores', appStores.filter(x => x.id == 31)); // CAR_Refueling
       }
 
       settings.dbVersion = this.dbVersion;
