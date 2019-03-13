@@ -22,7 +22,7 @@ amountInEUR = async (rec, roundTo = 2) => {
 numberOfDaysBetween = (rec) => {
   let a = new Date(rec.dateFrom).setHours(0, 0, 0, 0),
       b = new Date(rec.dateTo == null ? Date.now() : rec.dateTo).setHours(0, 0, 0, 0);
-  return (b - a) / (1000 * 60 * 60 * 24) + 1;
+  return Math.round((b - a) / (1000 * 60 * 60 * 24) + 1);
 };
 
 // recalculate consumptions for all refuelings
@@ -264,11 +264,30 @@ carUpdatePricePerDrives = () => {
 };
 
 carDrivesReport = async () => {
+  const pxPerDay = 2,
+        pxPerKm = 0.5;
+  let drives = Array.from(await aaf.getStoreRecords('CAR_Drives')).orderBy('date', false),
+      lastDate = new Date().addDays(1).toYMD(),
+      lastBottom = 0,
+      arrDrives = [],
+      maxKm = 0;
+
+  for (const drv of drives) {
+    arrDrives.push({
+      date: drv.date,
+      name: drv.desc,
+      km: drv.km,
+      days: numberOfDaysBetween({ dateFrom: drv.date, dateTo: lastDate }) - 1
+    });
+    lastDate = drv.date;
+    if (maxKm < drv.km) maxKm = drv.km;
+  }
+
   //Init Canvas
   let canvas = document.createElement('canvas'),
       ctx = canvas.getContext('2d'),
       dpr = window.devicePixelRatio,
-      width = 400,
+      width = 800,
       height = 10000;
 
   width = Math.ceil(width * dpr);
@@ -280,37 +299,23 @@ carDrivesReport = async () => {
   ctx.scale(dpr, dpr);
 
   //Draw Drives
-  const pxPerDay = 6,
-        dateNow = new Date().toYMD(),
-        drvsLeftOffset = 100
-        drvTextBoxHeight = 16;
-  let drives = Array.from(await aaf.getStoreRecords('CAR_Drives')).orderBy('kmTotal', false),
-      lastDate = new Date().addDays(1).toYMD(),
-      lastBottom = 0;
-  
-  ctx.font = '12px sans-serif';
-  for (const drv of drives) {
-    const daysFromNow = numberOfDaysBetween({ dateFrom: drv.date, dateTo: dateNow }),
-          daysFromLast = numberOfDaysBetween({ dateFrom: lastDate, dateTo: dateNow });
-    let drvHeight = (daysFromNow - daysFromLast) * pxPerDay,
-        drvTop = daysFromLast * pxPerDay,
-        textTop = drvTop + Math.ceil(drvHeight / 2) - drvTextBoxHeight / 2;
-    lastDate = drv.date;
-    aaf.canvas.drawRect(ctx, 50, drvTop, 20, drvHeight, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
-
-    if (textTop < lastBottom) 
-      textTop = lastBottom;
-    lastBottom = textTop + drvTextBoxHeight;
-    aaf.canvas.drawRect(ctx, drvsLeftOffset, textTop, ctx.measureText(drv.desc).width + 4, drvTextBoxHeight, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
-    aaf.canvas.drawText(ctx, drv.desc, drvsLeftOffset + 2, textTop + 12, 'rgba(255, 255, 255, 1)');
-
-    ctx.beginPath();
-    ctx.moveTo(70, drvTop + Math.ceil(drvHeight / 2));
-    ctx.lineTo(drvsLeftOffset, textTop + drvTextBoxHeight / 2);
-    ctx.stroke();
-
+  const center = maxKm * pxPerKm;
+  for (const drv of arrDrives) {
+    // name
+    //aaf.canvas.drawText(ctx, drv.name, center - Math.ceil(ctx.measureText(drv.name).width / 2), lastBottom + 13, 'rgba(255, 255, 255, 1)');
+    //lastBottom += 20;
+    // km
+    aaf.canvas.drawRect(ctx, center - (drv.km * pxPerKm), lastBottom, drv.km * pxPerKm, 20, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    // km text
+    //aaf.canvas.drawRect(ctx, drvsLeftOffset, textTop, ctx.measureText(drv.desc).width + 4, drvTextBoxHeight, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    aaf.canvas.drawText(ctx, drv.km, center - (drv.km * pxPerKm) - ctx.measureText(drv.km).width - 4, lastBottom + 13, 'rgba(255, 255, 255, 1)');
+    // days
+    aaf.canvas.drawRect(ctx, center + 10, lastBottom, drv.days * pxPerDay, 20, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    // days text
+    aaf.canvas.drawRect(ctx, center + (drv.days * pxPerDay) + 14, lastBottom + 2, ctx.measureText(drv.days).width + 5, 14, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    aaf.canvas.drawText(ctx, drv.days + '   ' + drv.name, center + (drv.days * pxPerDay) + 4 + 12, lastBottom + 13, 'rgba(255, 255, 255, 1)');
+    lastBottom += 20;
   }
-
 
   let divRep = document.createElement('div'),
       divRepData = document.createElement('div');
@@ -328,7 +333,7 @@ carDrivesReport = async () => {
 carRefuelingReport = async () => {
   const pxPerL = 40,
         pxPerKm = 0.05,
-        leftOffset = -50,
+        leftOffset = -80,
         topOffset = 20;
 
   let refuelings = Array.from(await aaf.getStoreRecords('CAR_Refueling')).orderBy('kmTotal'),
@@ -338,6 +343,7 @@ carRefuelingReport = async () => {
   for (let ref of refuelings) {
     if (ref.consumption == 0) continue;
     arrCoords.push({
+      date: ref.date,
       kmTotal: ref.kmTotal,
       consumption: ref.consumption,
       x: Math.ceil(leftOffset + (pxPerL * ref.consumption)),
@@ -386,8 +392,13 @@ carRefuelingReport = async () => {
     ctx.moveTo(rec.x, rec.y);
     ctx.lineTo(rec.x + 20, textTop + 8);
     ctx.stroke();
-    aaf.canvas.drawRect(ctx, rec.x + 20, textTop, ctx.measureText(rec.consumption).width + 4, 16, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    // consumption
+    let consRectWidth = ctx.measureText(rec.consumption).width + 4;
+    aaf.canvas.drawRect(ctx, rec.x + 20, textTop, consRectWidth, 16, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
     aaf.canvas.drawText(ctx, rec.consumption, rec.x + 22, textTop + 12, 'rgba(255, 255, 255, 1)');
+    // date
+    //aaf.canvas.drawRect(ctx, rec.x + consRectWidth + 24, textTop, ctx.measureText(rec.date.substring(0, 7)).width + 4, 16, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    //aaf.canvas.drawText(ctx, rec.date.substring(0, 7), rec.x + consRectWidth + 26, textTop + 12, 'rgba(255, 255, 255, 1)');
   }
 
   // Draw km
@@ -399,7 +410,7 @@ carRefuelingReport = async () => {
     let y = (((km * 1000) - startKm) * pxPerKm) + topOffset;
     ctx.beginPath();
     ctx.moveTo(10, y);
-    ctx.lineTo(160, y);
+    ctx.lineTo(130, y);
     ctx.stroke();
     aaf.canvas.drawText(ctx, km * 1000, 20, y -2, 'rgba(255, 255, 255, 1)');
   }
@@ -554,7 +565,7 @@ monDebtsCalc = async () => {
     { name: "debtorId", title: "Debtor", source: { name: "GLO_People", property: "name" }},
     { name: "eurCalc", title: "EUR", align: "right" }]};
   await aaf.linkStores(form);
-  document.getElementById('grid').innerHTML = await aaf.getGrid(form, pairs, false);
+  aaf.createGrid('grid', form, pairs, false);
 };
 
 monGetTransportData = async (personId) => {
@@ -757,23 +768,25 @@ monCostsReport = async () => {
 };
 
 monUpdateRates = async () => {
-  try {
-    let response = await fetch('https://openexchangerates.org/api/latest.json?app_id=87daff001ce54adcb026f28899a098ca');
-    if (response.ok) {
-      let json = await response.json(),
-          currencies = await aaf.getStoreRecords('MON_Currencies');
-      for (let rec of currencies) {
-        rec.date = new Date().toYMD();
+  fetch('https://openexchangerates.org/api/latest.json?app_id=87daff001ce54adcb026f28899a098ca')
+    .then((response) => {
+      if (response.ok)
+        return response.json();
+      throw new Error('Network response was not ok.');
+    }).then((json) => {
+      let store = aaf.dbSchema.find(x => x.name == 'MON_Currencies'),
+          date = new Date().toYMD();
+
+      for (let rec of store.data) {
+        rec.date = date;
         rec.amount = (json.rates[rec.code] / json.rates['EUR']).toFixed(4);
       }
-      await aaf.iudStoreData('update', 'MON_Currencies', currencies);
-      aaf.dbSchema.find(x => x.name == 'MON_Currencies').data = currencies;
-      document.getElementById('grid').innerHTML = await aaf.getGrid();
-    }
-  } catch (error) {
-    aaf.log(error);
-    return;
-  }
+
+      aaf.iudStoreData('update', 'MON_Currencies', store.data);
+      aaf.createGrid('grid', store, store.data, true);
+    }).catch((error) => {
+      aaf.log(error.message, true);
+    });
 };
 
 monUpdateMissingRates = async () => {

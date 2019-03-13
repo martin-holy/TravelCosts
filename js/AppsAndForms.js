@@ -14,7 +14,6 @@ var aaf = aaf || {
   // openDb
   openDb: function() {
     this.log("openDb ...");
-    console.time('openDb');
     let isUpdgradeNeeded = false,
         req = window.indexedDB.open(this.dbName, 1); // version always 1
   
@@ -24,7 +23,6 @@ var aaf = aaf || {
         this.log("Database error: " + e.target.errorCode, true);
       }
       this.log("openDb: done");
-      console.timeEnd('openDb');
       if (isUpdgradeNeeded) {
         this.insertUpdateInitDBData();
       } else {
@@ -79,9 +77,9 @@ var aaf = aaf || {
       };
 
       switch (action) {
-        case 'insert': for (let d of data) store.add(d); break;
-        case 'update': for (let d of data) store.put(d); break;
-        case 'delete': for (let d of data) store.delete(d); break;
+        case 'insert': for (const rec of data) store.add(rec); break;
+        case 'update': for (const rec of data) store.put(rec); break;
+        case 'delete': for (const rec of data) store.delete(rec); break;
       }
     });
   },
@@ -155,9 +153,9 @@ var aaf = aaf || {
         </table>`);
     }
   
+    this.setTitle('Travel Costs');
     document.getElementById('mainContent').innerHTML = `<div id="appMap">${groups.join('')}</div>`;
-    document.getElementById('title').innerHTML = 'Travel Costs';
-    document.getElementById('menu').innerHTML = '<li onclick="aaf.testFunc();aaf.menuButtonClick();">Test Func</li>';
+    document.getElementById('menu').innerHTML = '<li onclick="aaf.testFunc();">Test Func</li>';
   },
   
   exportData: async function() {
@@ -276,7 +274,7 @@ var aaf = aaf || {
     return (await this.getStoreRecords(name)).find(rec => rec.id == id);
   },
 
-  loadForm: async function(frm) {
+  loadForm: function(frm) {
     document.getElementById('menu').style.visibility = 'hidden';
     this.contentTabs.clear();
     this.contentTabs.add('grid');
@@ -286,12 +284,12 @@ var aaf = aaf || {
     this.contentTabs.active('grid');
   
     this.currentForm = this.dbSchema.find(store => store.name == frm);
+    this.setTitle(this.currentForm.title);
     this.createMenu();
-    console.time('getGrid');
-    document.getElementById('grid').innerHTML = await this.getGrid();
-    console.timeEnd('getGrid');
     this.createEdit();
-    document.getElementById('title').innerHTML = this.currentForm.title;
+    this.getStoreRecords(this.currentForm.name, true).then((gridItems) => {
+      this.createGrid('grid', this.currentForm, gridItems, true);
+    });
   },
 
   contentTabs: {
@@ -311,9 +309,16 @@ var aaf = aaf || {
     }
   },
 
-  menuButtonClick: function() {
-    let menu = document.getElementById('menu');
-    menu.style.visibility = menu.style.visibility == 'visible' ? 'hidden' : 'visible';
+  setTitle: function(title) {
+    document.getElementById('title').innerHTML = title;
+  },
+
+  menuOpen: function() {
+    document.getElementById('menu').style.visibility = 'visible';
+  },
+
+  menuHide: function(e) {
+    e.style.visibility = 'hidden';
   },
   
   createMenu: async function() {
@@ -322,38 +327,32 @@ var aaf = aaf || {
         siblings = groups.find(g => g.stores.includes(this.currentForm.id)).stores,
         items = [];
       
-    //link to site map
-    items.push('<li onclick="aaf.createAppMap();aaf.menuButtonClick();">Home</li>');
-    //header Forms
-    items.push('<li class="liDivider">Forms</li>');
+    items.push('<li onclick="aaf.createAppMap();">Home</li>'); // link to site map
+    items.push('<li class="liDivider">Forms</li>'); // header Forms
     for (let storeId of siblings) {
       let s = stores.find(store => store.id == storeId);
       items.push(`<li onclick="aaf.loadForm(\'${s.name}\');">${s.title}</li>`);
     }
     items.push('<li class="liDivider">---</li>');
-    items.push('<li onclick="aaf.editRecord(-1);aaf.menuButtonClick();">New Record</li>');
+    items.push('<li onclick="aaf.editRecord(-1);">New Record</li>');
     //forms functions
     if (this.currentForm.functions)
       for (let func of this.currentForm.functions) {
-        items.push(`<li onclick="${func.name}();aaf.menuButtonClick();">${func.title}</li>`);
+        items.push(`<li onclick="${func.name}();">${func.title}</li>`);
       }
   
     document.getElementById("menu").innerHTML = items.join('');
   },
-  
+
   // Generate Grid view
-  getGrid: async function(form = this.currentForm, gridItems = null, editable = true) {
+  createGrid: function(divId, form, gridItems, editable) {
     let thead = [];
     for (let prop of form.properties) {
       if (prop.hidden || prop.type == 'array') continue;
       thead.push(`<th>${prop.title}</th>`);
     }
   
-    let tbody = [];
-    console.time('getStoreRecords');
-    if (gridItems == null) gridItems = await this.getStoreRecords(form.name, true);
-    console.timeEnd('getStoreRecords');
-  
+    let tbody = []; 
     for (let item of gridItems) {
       let tds = [];
       
@@ -393,7 +392,7 @@ var aaf = aaf || {
       tbody.push(`<tr${editable ? ` onclick="aaf.editRecord(${item.id});"` : ''}>${tds.join('')}</tr>`);
     }
 
-    return `<table class="grid"><thead><tr>${thead.join('')}</tr></thead><tbody>${tbody.join('')}</tbody></table>`;
+    document.getElementById(divId).innerHTML = `<table class="grid"><thead><tr>${thead.join('')}</tr></thead><tbody>${tbody.join('')}</tbody></table>`;
   },
   
   //Generate Edit form
@@ -550,7 +549,9 @@ var aaf = aaf || {
       delete this.currentForm.data;
       if (this.currentForm.onSaveFunc)
         await window[this.currentForm.onSaveFunc]();
-      document.getElementById('grid').innerHTML = await this.getGrid();
+      this.getStoreRecords(this.currentForm.name, true).then((gridItems) => {
+        this.createGrid('grid', this.currentForm, gridItems, true);
+      });
     };
   
     if (rec.id) store.put(rec); else store.add(rec);
@@ -585,10 +586,12 @@ var aaf = aaf || {
       var request = this.db.transaction([this.currentForm.name], "readwrite")
                           .objectStore(this.currentForm.name)
                           .delete(this.currentForm.currentRecord.id);
-      request.onsuccess = async () => {
+      request.onsuccess = () => {
         this.hideEdit();
         delete this.currentForm.data;
-        document.getElementById('grid').innerHTML = await this.getGrid();
+        this.getStoreRecords(this.currentForm.name, true).then((gridItems) => {
+          this.createGrid('grid', this.currentForm, gridItems, true);
+        });
       };
     }
   },
