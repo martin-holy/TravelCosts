@@ -1,5 +1,5 @@
 const appName = 'TravelCosts',
-      appVersion = 'v1',
+      appVersion = 'v2019.03.29',
       cacheName = `${appName}_${appVersion}`;
 
 // Call Install Event
@@ -15,7 +15,12 @@ self.addEventListener('install', e => {
         '/TravelCosts/manifest.json',
         '/TravelCosts/css/dark.css',
         '/TravelCosts/img/icon-144x144.png',
-        '/TravelCosts/js/AppsAndForms.js',
+        '/TravelCosts/img/adm.png',
+        '/TravelCosts/img/car.png',
+        '/TravelCosts/img/global.png',
+        '/TravelCosts/img/money.png',
+        '/TravelCosts/img/background.jpg',
+        '/TravelCosts/js/appCore.js',
         '/TravelCosts/js/custom.js',
         '/TravelCosts/js/extensions.js',
         '/TravelCosts/js/appStores.js'
@@ -45,10 +50,8 @@ self.addEventListener('activate', e => {
 
 // Call Fetch Event
 self.addEventListener('fetch', e => {
-  //network falling back to cache
-  e.respondWith(
-    fetch(e.request).catch(function() {
-      return caches.match(e.request);
-    })
-  );
+  // Respond with Cache falling back to Network
+  e.respondWith(async function() {
+    return await caches.match(e.request) || fetch(e.request);
+  }());
 });

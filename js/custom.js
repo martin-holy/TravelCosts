@@ -7,11 +7,11 @@ amountInEUR = async (rec, roundTo = 2) => {
   if (rec.currencyId == monEURCurrencyId) //EUR
     return rec.amount;
 
-  let rates = await aaf.getStoreRecords('MON_Rates'),
+  let rates = await appStores.MON_Rates.data(),
       rate = rates.find(r => r.date == rec.date && r.currencyId == rec.currencyId);
   
   if (rate === undefined) {
-    let currencies = await aaf.getStoreRecords('MON_Currencies');
+    let currencies = await appStores.MON_Currencies.data();
     rate = currencies.find(x => x.id == rec.currencyId);
   }
 
@@ -26,40 +26,33 @@ numberOfDaysBetween = (rec) => {
 };
 
 // recalculate consumptions for all refuelings
-carCalcConsumptions = () => {
-  return new Promise(async (resolve) => {
-    const storeName = 'CAR_Refueling';
-    let refuelings = Array.from(await aaf.getStoreRecords(storeName)).orderBy('kmTotal'),
-        tx = aaf.db.transaction([storeName], 'readwrite'),
-        store = tx.objectStore(storeName),
-        kmFrom = 0,
-        l = 0;
+carCalcConsumptions = async () => {
+  let refuelings = await appStores.CAR_Refueling.data({orderBy: 'kmTotal'}),
+      kmFrom = 0,
+      l = 0;
 
-    tx.oncomplete = async () => {
-      delete aaf.dbSchema.find(s => s.name == storeName).data;
-      resolve(await carUpdateDieselPricePerKm());
-    };
-
-    for (let ref of refuelings) {
-      if (kmFrom == 0) {
-        kmFrom = ref.kmTotal;
-        ref.consumption = 0;
-        store.put(ref);
-        continue;
-      }
-      
-      l += ref.liters;
-
-      if (ref.fullTank) {
-        ref.consumption = ((100.0 / (ref.kmTotal - kmFrom)) * l).round(2);
-        kmFrom = ref.kmTotal;
-        l = 0;
-      } else {
-        ref.consumption = 0;
-      }
-
-      store.put(ref);
+  for (let ref of refuelings) {
+    if (kmFrom == 0) {
+      kmFrom = ref.kmTotal;
+      ref.consumption = 0;
+      continue;
     }
+    
+    l += ref.liters;
+
+    if (ref.fullTank) {
+      ref.consumption = ((100.0 / (ref.kmTotal - kmFrom)) * l).round(2);
+      kmFrom = ref.kmTotal;
+      l = 0;
+    } else {
+      ref.consumption = 0;
+    }
+  }
+
+  await appStores.CAR_Refueling.update(refuelings);
+  await carUpdateDieselPricePerKm();
+  appStores.CAR_Refueling.data({sorted: true}).then((gridItems) => {
+    appCore.createGrid('grid', appStores.CAR_Refueling.dbSchema, gridItems, true);
   });
 };
 
@@ -73,7 +66,7 @@ carGetEurPerDay = (rec) => {
 
 carUpdateDieselPricePerKm = () => {
   return new Promise(async (resolve) => {
-    let refuelings = Array.from(await aaf.getStoreRecords('CAR_Refueling')).orderBy('kmTotal'),
+    let refuelings = Array.from(await appStores.CAR_Refueling.data()).orderBy('kmTotal'),
     arrLiters = [],
     arrPrice = [],
     arrKm = [],
@@ -172,13 +165,13 @@ carUpdateDieselPricePerKm = () => {
       price.found = false;
     }
 
-    let arrPricePerKmDiesel = (await aaf.getStoreRecords('CAR_PricePerKm')).filter(p => p.costTypeId == carDieselCostTypeId),
-        tx = aaf.db.transaction(['CAR_PricePerKm'], 'readwrite'),
+    let arrPricePerKmDiesel = (await appStores.CAR_PricePerKm.data()).filter(p => p.costTypeId == carDieselCostTypeId),
+        tx = appCore.db.db.transaction(['CAR_PricePerKm'], 'readwrite'),
         store = tx.objectStore('CAR_PricePerKm'),
         found = false;
 
     tx.oncomplete = () => {
-      delete aaf.dbSchema.find(s => s.name == 'CAR_PricePerKm').data;
+      delete appCore.CAR_PricePerKm.cache;
       resolve();
     };
 
@@ -203,70 +196,52 @@ carUpdateDieselPricePerKm = () => {
   });
 };
 
-carUpdateAmortizationPricePerKm = () => {
-  return new Promise(async (resolve) => {
-    let arrPricePerKmAmorti = (await aaf.getStoreRecords('CAR_PricePerKm')).filter(p => p.costTypeId == carAmortizationCostTypeId),
-        lastKmTotal = Array.from(await aaf.getStoreRecords('CAR_Drives')).orderBy('kmTotal', false)[0],
-        tx = aaf.db.transaction(['CAR_PricePerKm'], 'readwrite'),
-        store = tx.objectStore('CAR_PricePerKm');
+carUpdateAmortizationPricePerKm = async () => {
+  let arrPricePerKmAmorti = (await appStores.CAR_PricePerKm.data()).filter(p => p.costTypeId == carAmortizationCostTypeId),
+      lastKmTotal = (await appStores.CAR_Drives.data({orderBy: 'kmTotal', orderAsc: false}))[0];
 
-    tx.oncomplete = () => {
-      delete aaf.dbSchema.find(s => s.name == 'CAR_PricePerKm').data;
-      resolve();
-    };
+  // Extending Amortization
+  lastKmTotal = lastKmTotal === undefined ? 300000 : lastKmTotal.kmTotal;
+  for (let a of arrPricePerKmAmorti) {
+    a.kmTo = lastKmTotal;
+    a.eur = (a.eurTotal / (a.kmTo - a.kmFrom)).round(5);
+  }
 
-    //Extending Amortization
-    lastKmTotal = lastKmTotal === undefined ? 300000 : lastKmTotal.kmTotal;
-    for (let a of arrPricePerKmAmorti) {
-      a.kmTo = lastKmTotal;
-      a.eur = (a.eurTotal / (a.kmTo - a.kmFrom)).round(5);
-      store.put(a);
-    }
-  });
-}
+  await appStores.CAR_PricePerKm.update(arrPricePerKmAmorti);
+};
 
-carUpdatePricePerDrives = () => {
-  return new Promise(async (resolve) => {
-    await carUpdateAmortizationPricePerKm();
+carUpdatePricePerDrives = async () => {
+  await carUpdateAmortizationPricePerKm();
 
-    let arrDrives = Array.from(await aaf.getStoreRecords('CAR_Drives')).orderBy('kmTotal'),
-        arrPricePerKm = await aaf.getStoreRecords('CAR_PricePerKm'),
-        tx = aaf.db.transaction(['CAR_Drives'], 'readwrite'),
-        store = tx.objectStore('CAR_Drives'),
-        kmFrom = 156327; // stav při koupení auta
+  let arrDrives = await appStores.CAR_Drives.data({orderBy: 'kmTotal'}),
+      arrPricePerKm = await appStores.CAR_PricePerKm.data(),
+      kmFrom = 156327; // stav při koupení auta
 
-    tx.oncomplete = async () => {
-      delete aaf.dbSchema.find(s => s.name == 'CAR_Drives').data;
-      resolve();
-    };
+  for (let drv of arrDrives) {
+    let eur = 0;
+    drv.km = drv.kmTotal - kmFrom;
 
-    for (let drv of arrDrives) {
-      let eur = 0;
-      drv.km = drv.kmTotal - kmFrom;
+    for (let price of arrPricePerKm) {
+      if (price.kmTo <= kmFrom || price.kmFrom >= drv.kmTotal) continue;
 
-      for (let price of arrPricePerKm) {
-        if (price.kmTo <= kmFrom || price.kmFrom >= drv.kmTotal) continue;
+      let pricePerKm = price.eurTotal / (price.kmTo - price.kmFrom),
+          from = price.kmFrom < kmFrom ? kmFrom : price.kmFrom,
+          to = price.kmTo > drv.kmTotal ? drv.kmTotal : price.kmTo;
 
-        let from = price.kmFrom < kmFrom ? kmFrom : price.kmFrom,
-            to = price.kmTo > drv.kmTotal ? drv.kmTotal : price.kmTo,
-            pricePerKm = price.eurTotal / (price.kmTo - price.kmFrom);
-
-        eur += (to - from) * pricePerKm;
-      }
-
-      drv.eur = eur.round(2);
-      store.put(drv);
-
-      kmFrom = drv.kmTotal;
+      eur += (to - from) * pricePerKm;
     }
 
-  });
+    drv.eur = eur.round(2);
+    kmFrom = drv.kmTotal;
+  }
+
+  await appStores.CAR_Drives.update(arrDrives);
 };
 
 carDrivesReport = async () => {
   const pxPerDay = 2,
         pxPerKm = 0.5;
-  let drives = Array.from(await aaf.getStoreRecords('CAR_Drives')).orderBy('date', false),
+  let drives = Array.from(await appStores.CAR_Drives.data()).orderBy('date', false),
       lastDate = new Date().addDays(1).toYMD(),
       lastBottom = 0,
       arrDrives = [],
@@ -302,18 +277,18 @@ carDrivesReport = async () => {
   const center = maxKm * pxPerKm;
   for (const drv of arrDrives) {
     // name
-    //aaf.canvas.drawText(ctx, drv.name, center - Math.ceil(ctx.measureText(drv.name).width / 2), lastBottom + 13, 'rgba(255, 255, 255, 1)');
+    //appCore.canvas.drawText(ctx, drv.name, center - Math.ceil(ctx.measureText(drv.name).width / 2), lastBottom + 13, 'rgba(255, 255, 255, 1)');
     //lastBottom += 20;
     // km
-    aaf.canvas.drawRect(ctx, center - (drv.km * pxPerKm), lastBottom, drv.km * pxPerKm, 20, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    appCore.canvas.drawRect(ctx, center - (drv.km * pxPerKm), lastBottom, drv.km * pxPerKm, 20, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
     // km text
-    //aaf.canvas.drawRect(ctx, drvsLeftOffset, textTop, ctx.measureText(drv.desc).width + 4, drvTextBoxHeight, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
-    aaf.canvas.drawText(ctx, drv.km, center - (drv.km * pxPerKm) - ctx.measureText(drv.km).width - 4, lastBottom + 13, 'rgba(255, 255, 255, 1)');
+    //appCore.canvas.drawRect(ctx, drvsLeftOffset, textTop, ctx.measureText(drv.desc).width + 4, drvTextBoxHeight, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    appCore.canvas.drawText(ctx, drv.km, center - (drv.km * pxPerKm) - ctx.measureText(drv.km).width - 4, lastBottom + 13, 'rgba(255, 255, 255, 1)');
     // days
-    aaf.canvas.drawRect(ctx, center + 10, lastBottom, drv.days * pxPerDay, 20, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    appCore.canvas.drawRect(ctx, center + 10, lastBottom, drv.days * pxPerDay, 20, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
     // days text
-    aaf.canvas.drawRect(ctx, center + (drv.days * pxPerDay) + 14, lastBottom + 2, ctx.measureText(drv.days).width + 5, 14, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
-    aaf.canvas.drawText(ctx, drv.days + '   ' + drv.name, center + (drv.days * pxPerDay) + 4 + 12, lastBottom + 13, 'rgba(255, 255, 255, 1)');
+    appCore.canvas.drawRect(ctx, center + (drv.days * pxPerDay) + 14, lastBottom + 2, ctx.measureText(drv.days).width + 5, 14, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    appCore.canvas.drawText(ctx, drv.days + '   ' + drv.name, center + (drv.days * pxPerDay) + 4 + 12, lastBottom + 13, 'rgba(255, 255, 255, 1)');
     lastBottom += 20;
   }
 
@@ -327,7 +302,7 @@ carDrivesReport = async () => {
 
   document.getElementById('treeView').innerHTML = '';
   document.getElementById('treeView').appendChild(divRep);
-  aaf.contentTabs.active('treeView');
+  appCore.contentTabs.active('treeView');
 };
 
 carRefuelingReport = async () => {
@@ -336,7 +311,7 @@ carRefuelingReport = async () => {
         leftOffset = -80,
         topOffset = 20;
 
-  let refuelings = Array.from(await aaf.getStoreRecords('CAR_Refueling')).orderBy('kmTotal'),
+  let refuelings = Array.from(await appStores.CAR_Refueling.data()).orderBy('kmTotal'),
       arrCoords = [],
       startKm = refuelings[0].kmTotal;
 
@@ -394,11 +369,11 @@ carRefuelingReport = async () => {
     ctx.stroke();
     // consumption
     let consRectWidth = ctx.measureText(rec.consumption).width + 4;
-    aaf.canvas.drawRect(ctx, rec.x + 20, textTop, consRectWidth, 16, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
-    aaf.canvas.drawText(ctx, rec.consumption, rec.x + 22, textTop + 12, 'rgba(255, 255, 255, 1)');
+    appCore.canvas.drawRect(ctx, rec.x + 20, textTop, consRectWidth, 16, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    appCore.canvas.drawText(ctx, rec.consumption, rec.x + 22, textTop + 12, 'rgba(255, 255, 255, 1)');
     // date
-    //aaf.canvas.drawRect(ctx, rec.x + consRectWidth + 24, textTop, ctx.measureText(rec.date.substring(0, 7)).width + 4, 16, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
-    //aaf.canvas.drawText(ctx, rec.date.substring(0, 7), rec.x + consRectWidth + 26, textTop + 12, 'rgba(255, 255, 255, 1)');
+    //appCore.canvas.drawRect(ctx, rec.x + consRectWidth + 24, textTop, ctx.measureText(rec.date.substring(0, 7)).width + 4, 16, 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 1)');
+    //appCore.canvas.drawText(ctx, rec.date.substring(0, 7), rec.x + consRectWidth + 26, textTop + 12, 'rgba(255, 255, 255, 1)');
   }
 
   // Draw km
@@ -412,7 +387,7 @@ carRefuelingReport = async () => {
     ctx.moveTo(10, y);
     ctx.lineTo(130, y);
     ctx.stroke();
-    aaf.canvas.drawText(ctx, km * 1000, 20, y -2, 'rgba(255, 255, 255, 1)');
+    appCore.canvas.drawText(ctx, km * 1000, 20, y -2, 'rgba(255, 255, 255, 1)');
   }
 
   let divRep = document.createElement('div'),
@@ -425,7 +400,7 @@ carRefuelingReport = async () => {
 
   document.getElementById('treeView').innerHTML = '';
   document.getElementById('treeView').appendChild(divRep);
-  aaf.contentTabs.active('treeView');
+  appCore.contentTabs.active('treeView');
 };
 
 combineDateIntervals = (arrays) => {
@@ -485,8 +460,8 @@ splitPriceInIntervals = (intervals) => {
 };
 
 monGetPricesByDay = async () => {
-  let presencePerDay = Array.from(await aaf.getStoreRecords("CAR_PresencePerDay")),
-      pricesPerDay = Array.from(await aaf.getStoreRecords("CAR_PricePerDay")),
+  let presencePerDay = Array.from(await appStores.CAR_PresencePerDay.data()),
+      pricesPerDay = Array.from(await appStores.CAR_PricePerDay.data()),
       intervals = combineDateIntervals([presencePerDay]);
 
   mapDataToIntervals(presencePerDay, 'people', intervals);
@@ -497,7 +472,7 @@ monGetPricesByDay = async () => {
 };
 
 monDebtsCalc = async () => {
-  let presencePerDay = Array.from(await aaf.getStoreRecords("CAR_PresencePerDay")),
+  let presencePerDay = Array.from(await appStores.CAR_PresencePerDay.data()),
       intervals = await monGetPricesByDay(),
       people = [];
       
@@ -513,7 +488,7 @@ monDebtsCalc = async () => {
   }
 
   // CALCULATING PRICE FOR DIESEL, OIL, AMORTIZATION, TIRES => DRIVES
-  let drives = await aaf.getStoreRecords("CAR_Drives");
+  let drives = await appStores.CAR_Drives.data();
   for (let drv of drives) {
     let eurPerPerson = drv.eur / drv.people.length;
     for (let pId of drv.people) {
@@ -522,7 +497,7 @@ monDebtsCalc = async () => {
   }
 
   // CALCULATING DEBTS RECORDS
-  let debts = await aaf.getStoreRecords("MON_Debts"),
+  let debts = await appStores.MON_Debts.data(),
       pairs = [];
   for (let d of debts) {
     let pair = pairs.find(p => p.payerId == d.payerId && p.debtorId == d.debtorId);
@@ -564,13 +539,13 @@ monDebtsCalc = async () => {
     { name: "payerId", title: "Payer", source: { name: "GLO_People", property: "name" }},
     { name: "debtorId", title: "Debtor", source: { name: "GLO_People", property: "name" }},
     { name: "eurCalc", title: "EUR", align: "right" }]};
-  await aaf.linkStores(form);
-  aaf.createGrid('grid', form, pairs, false);
+  await appCore.db.linkStores(form);
+  appCore.createGrid('grid', form, pairs, false);
 };
 
 monGetTransportData = async (personId) => {
-  let presencePerDay = Array.from(await aaf.getStoreRecords("CAR_PresencePerDay")).orderBy('dateFrom'),
-      pricesPerDay = Array.from(await aaf.getStoreRecords("CAR_PricePerDay")),
+  let presencePerDay = Array.from(await appStores.CAR_PresencePerDay.data()).orderBy('dateFrom'),
+      pricesPerDay = Array.from(await appStores.CAR_PricePerDay.data()),
       yearFrom = Number.parseInt(presencePerDay[0].dateFrom.substring(0, 4)),
       yearTo = new Date().getFullYear(),
       monthIntervals = [],
@@ -599,7 +574,7 @@ monGetTransportData = async (personId) => {
     });
   }
 
-  let drives = await aaf.getStoreRecords('CAR_Drives');
+  let drives = await appStores.CAR_Drives.data();
   for (let d of drives) {
     if (d.people.find(x => x == personId) == undefined) continue;
     output.push({
@@ -613,14 +588,12 @@ monGetTransportData = async (personId) => {
 };
 
 monCostsReport = async () => {
-  let costTypes = Array.from(await aaf.getStoreRecords('MON_CostsTypes')).orderBy('name');
+  let costTypes = Array.from(await appStores.MON_CostsTypes.data()).orderBy('name');
 
   if (document.getElementById('__rep_CostsReport') == null) {
-    let people = Array.from(await aaf.getStoreRecords('GLO_People')).orderBy('name'),
-        types = [],
+    let types = [],
         typesSet = [],
         selectTypes = xSelect('__rep_costTypeId'),
-        selectPerson = xSelect('__rep_personId'),
         selectGroupBy = xSelect('__rep_groupBy'),
         divRep = document.createElement('div'),
         divRepData = document.createElement('div'),
@@ -632,11 +605,6 @@ monCostsReport = async () => {
       typesSet.push(x.id);
     }
 
-    people.forEach(x => x.value = x.id);
-    selectPerson.create(people, false, true);
-    selectPerson.set([1]);
-    selectPerson.element.dataset.onchange = 'monCostsReport';
-
     selectGroupBy.create([{value:1,name:'1 Month'},{value:3,name:'3 Months'},{value:6,name:'6 Months'},{value:12,name:'1 Year'}], false);
     selectGroupBy.set([1]);
     selectGroupBy.element.dataset.onchange = 'monCostsReport';
@@ -645,7 +613,6 @@ monCostsReport = async () => {
     selectTypes.set(typesSet);
     selectTypes.element.dataset.onchange = 'monCostsReport';
 
-    divSelects.appendChild(selectPerson.element);
     divSelects.appendChild(selectGroupBy.element);
     divTypes.appendChild(selectTypes.element);
     divRep.appendChild(divSelects);
@@ -662,8 +629,9 @@ monCostsReport = async () => {
   if (selectedCostTypes.length == 0) return;
   
   let groupBy = xSelect('__rep_groupBy').get()[0],
-      records = await aaf.getStoreRecords('MON_Costs'),
-      transportData = await monGetTransportData(xSelect('__rep_personId').get()[0]),  // 1 = Martin //TODO get it from settings
+      records = await appStores.MON_Costs.data(),
+      person = (await appStores.GLO_People.data()).find(x => x.active == true),
+      transportData = await monGetTransportData(person.id),
       allRecords = records.concat(transportData),
       years = [],
       years2 = [];
@@ -764,28 +732,28 @@ monCostsReport = async () => {
   }
 
   document.getElementById('__rep_CostsReportData').innerHTML = `<table>${trs.join('')}</table>`;
-  aaf.contentTabs.active('treeView');
+  appCore.contentTabs.active('treeView');
 };
 
-monUpdateRates = async () => {
+monUpdateRates = () => {
   fetch('https://openexchangerates.org/api/latest.json?app_id=87daff001ce54adcb026f28899a098ca')
     .then((response) => {
       if (response.ok)
         return response.json();
       throw new Error('Network response was not ok.');
-    }).then((json) => {
-      let store = aaf.dbSchema.find(x => x.name == 'MON_Currencies'),
+    }).then(async (json) => {
+      let currencies = await appCore.MON_Currencies.data({sorted: true}),
           date = new Date().toYMD();
 
-      for (let rec of store.data) {
+      for (let rec of currencies) {
         rec.date = date;
         rec.amount = (json.rates[rec.code] / json.rates['EUR']).toFixed(4);
       }
 
-      aaf.iudStoreData('update', 'MON_Currencies', store.data);
-      aaf.createGrid('grid', store, store.data, true);
+      appStores.MON_Currencies.update(currencies);
+      appCore.createGrid('grid', appStores.MON_Currencies.dbSchema, currencies, true);
     }).catch((error) => {
-      aaf.log(error.message, true);
+      appCore.log(error.message, true);
     });
 };
 
@@ -793,11 +761,11 @@ monUpdateMissingRates = async () => {
   let costsToUpdate = [],
       incomesToUpdate = [],
       newRates = [],
-      oldRates = await aaf.getStoreRecords('MON_Rates'),
-      currencies = await aaf.getStoreRecords('MON_Currencies');
+      oldRates = await appStores.MON_Rates.data(),
+      currencies = await appStores.MON_Currencies.data();
 
   for (const storeName of ['CAR_Refueling', 'MON_Costs', 'MON_Incomes', 'MON_Debts']) {
-    let storeData = await aaf.getStoreRecords(storeName),
+    let storeData = await appStores[storeName].data(),
         toUpdate = [];
     for (const rec of storeData) {
       if (rec.currencyId == 9) continue; // EUR
@@ -812,19 +780,20 @@ monUpdateMissingRates = async () => {
     }
   }
   
-  // Get Historical Rates
-  try {
-    for (let rate of newRates) {
-      let response = await fetch(`https://openexchangerates.org/api/historical/${rate.date}.json?app_id=87daff001ce54adcb026f28899a098ca`);
-      if (!response.ok) continue;
-      let json = await response.json(),
-          code = currencies.find(x => x.id == rate.currencyId).code;
-      rate.amount = (json.rates[code] / json.rates['EUR']).toFixed(4);
-    }
-  } catch (error) {
-    aaf.log(error);
-    return;
-  }  
+  // Get Historical Rates of new records
+  for (let rate of newRates) {
+    await fetch(`https://openexchangerates.org/api/historical/${rate.date}.json?app_id=87daff001ce54adcb026f28899a098ca`)
+      .then((response) => {
+        if (response.ok)
+          return response.json();
+        throw new Error('Network response was not ok.');
+      }).then((json) => {
+        let code = currencies.find(x => x.id == rate.currencyId).code;
+        rate.amount = (json.rates[code] / json.rates['EUR']).toFixed(4);
+      }).catch((error) => {
+        appCore.log(error.message);
+      });
+  }
 
   let updateEUR = function (data) {
     for (let rec of data) {
@@ -835,14 +804,11 @@ monUpdateMissingRates = async () => {
 
   updateEUR(costsToUpdate);
   updateEUR(incomesToUpdate);
-  await aaf.iudStoreData('update', 'MON_Costs', costsToUpdate);
-  await aaf.iudStoreData('update', 'MON_Incomes', incomesToUpdate);
-  await aaf.iudStoreData('insert', 'MON_Rates', newRates);
-  delete aaf.dbSchema.find(x => x.name == 'MON_Costs').data;
-  delete aaf.dbSchema.find(x => x.name == 'MON_Incomes').data;
-  delete aaf.dbSchema.find(x => x.name == 'MON_Rates').data;
+  await appStores.MON_Costs.update(costsToUpdate);
+  await appStores.MON_Incomes.update(incomesToUpdate);
+  await appStores.MON_Rates.insert(newRates);
+  delete appStores.MON_Rates.cache;
   await carUpdateDieselPricePerKm();
   await carUpdatePricePerDrives();
-  aaf.log('Done', true);
+  appCore.log('Done', true);
 };
-

@@ -9,6 +9,8 @@ body {
   background-color: #33373A;
   font-family: sans-serif;
   color: #CBD0D0;
+  display: flex;
+  flex-direction: column;
 }
 
 a {
@@ -36,8 +38,16 @@ ul {
   font-weight: bold;
 }
 
+#version {
+  font-size: 10px;
+  position: absolute;
+  right: 5px;
+  top: 5px;
+}
+
 #mainContent {
   overflow: auto;
+  flex: 1;
 }
 
 .rborder {
@@ -60,7 +70,7 @@ ul {
   position: fixed;
   background-color: #24282A;
   top: 39px;
-  left: 1px;
+  left: 3px;
   padding: 0px;
   margin: 0px;
   border: 1px solid black;
@@ -85,8 +95,10 @@ ul {
 
 /* Application map*/
 #appMap {
+  background-image: url('../img/background.jpg');
+  background-size: cover;
+  background-attachment: fixed;
   padding: 4px;
-  padding-bottom: 0px;
 }
 
 #appMap table {
@@ -98,21 +110,19 @@ ul {
 
 #appMap table td {
   padding: 0px;
+}
+
+#appMap table td:last-child {
   vertical-align: top;
 }
 
 #appMap h2{
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(0, 0, 0, 0.6);
   color: white;
   text-shadow: 2px 2px 2px black;
   margin: 0px;
   padding: 2px;
   border-bottom: 1px solid black;
-}
-
-#appMap table tr:last-child td:first-child {
-  width: 128px;
-  padding: 2px;
 }
 
 #appMap ul {
@@ -125,28 +135,26 @@ ul {
   border-left: 1px solid black;
   border-top: 1px solid black;
   font-size: 18px;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.3);
+  color: white;
+  text-shadow: 1px 1px 1px black;
+  display: block;
+  cursor: pointer;
+  padding: 2px;
 }
  
 #appMap li:last-child {
   border-bottom: 1px solid black;
 }
-
-#appMap li a {
-  text-decoration: none;
-  color: white;
-  text-shadow: 1px 1px 1px black;
-  display: block;
-  padding: 2px;
-}
  
-#appMap li a:hover {
+#appMap li:hover {
   background: #f6f6f6;
 }
 /* End Application map*/
 
-.emojiIcon {
-  font-size: 53px;
+.groupIcon {
+  text-align: center;
+  width: 100px;
 }
 
 .grid {
@@ -154,8 +162,7 @@ ul {
   white-space: nowrap;
   font-size: 12px;
   font-weight: bold;
-  border: 1px solid black;
-  margin-left: 1px;
+  margin-top: 1px;
 }
 
 .grid tr:hover td {

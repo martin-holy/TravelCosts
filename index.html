@@ -9,17 +9,18 @@
     <!-- MyApp -->
     <script src="js/extensions.js"></script>
     <script src="js/appStores.js"></script>
-    <script src="js/AppsAndForms.js"></script>
+    <script src="js/appCore.js"></script>
     <script src="js/custom.js"></script>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/dark.css" />
   </head>
   <body>
     <div id="heather">
-      <div id="menuButton" onclick="aaf.menuOpen();">☰</div>
+      <div id="menuButton" onclick="appCore.menuOpen();">☰</div>
       <span id="title" class="rborder">Travel Costs</span>
+      <span id="version"></span>
     </div>
     <div id="mainContent"></div>
-    <ul id="menu" onclick="aaf.menuHide(this);"></ul>
+    <ul id="menu" onclick="appCore.menuHide(this);"></ul>
   </body>
 </html>

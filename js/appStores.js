@@ -1,5 +1,102 @@
-var appStores = [
-  { name: "ADM_AppStores", id: 1, title: "Application Stores",
+class AppStore {
+  constructor(dbSchema) {
+    this.dbSchema = dbSchema;
+  }
+
+  data(args = {}) {
+    // args: sorted(bool) => sort by default
+    //       orderBy(string) => sort by column name
+    //       orderAsc(bool) => true is default
+
+    // Get Store Records
+    let promises = [];
+    promises.push(new Promise((resolve, reject) => {
+      if (args.sorted) { // sort by default
+        args.orderBy = this.dbSchema.orderBy;
+        args.orderAsc = this.dbSchema.orderAsc;
+      }
+      if (args.orderBy) args.sorted = true;
+
+      if (this.cache) {
+        if (args.sorted)
+          this.cache.orderBy(args.orderBy, args.orderAsc);
+        resolve(this.cache);
+      } else {
+        let tx = appCore.db.db.transaction([this.dbSchema.name], 'readonly'),
+            request = tx.objectStore(this.dbSchema.name).getAll();
+        
+        request.onsuccess = (e) => {
+          this.cache = e.target.result;
+          if (args.sorted)
+            this.cache.orderBy(args.orderBy, args.orderAsc);
+          resolve(this.cache);
+        };
+
+        request.onerror = (e) => {
+          reject(e.target.errorCode);
+          appCore.log(`getStoreRecords: ${e.target.errorCode}`, true);
+        };
+      }
+    }));
+
+    // Link Stores and Get Linked Stores Records
+    for (let prop of this.dbSchema.properties) {
+      if (!prop.source) continue;
+      prop.source.store = appStores[prop.source.name];
+      promises.push(prop.source.store.data({sorted: true}));
+    }
+
+    return Promise.all(promises).then((result) => {
+      return new Promise((resolve) => {
+        // resolve only with Store Records
+        resolve(result[0]);
+      });
+    });
+  }
+
+  // insert, update and delete data from store based on action
+  iudStoreData(action, data) {
+    return new Promise((resolve, reject) => {
+      let tx = appCore.db.db.transaction([this.dbSchema.name], "readwrite"),
+          store = tx.objectStore(this.dbSchema.name);
+  
+      tx.oncomplete = () => {
+        appCore.log("All data updated in database!");
+        resolve();
+      };
+  
+      tx.onerror = (e) => {
+        appCore.log("There was an error:" + e.target.errorCode, true);
+        reject();
+      };
+
+      switch (action) {
+        case 'insert': for (const rec of data) store.add(rec); break;
+        case 'update': for (const rec of data) store.put(rec); break;
+        case 'delete': for (const rec of data) store.delete(rec); break;
+      }
+    });
+  }
+
+  async insert(data) {
+    await this.iudStoreData('insert', data);
+  }
+
+  async update(data) {
+    await this.iudStoreData('update', data);
+  }
+
+  async delete(data) {
+    await this.iudStoreData('delete', data);
+  }
+
+  async getRecordById(id) {
+    return (await this.data()).find(rec => rec.id == id);
+  }
+};
+
+const appStores = {
+  ADM_AppStores: new AppStore({ name: 'ADM_AppStores', id: 1, title: 'Application Stores',
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'name', title: 'Name', type: 'text', required: true },
@@ -27,11 +124,12 @@ var appStores = [
       ]}*/
     ],
     functions: [
-      { name: "aaf.importData", title: "Import data" },
-      { name: "aaf.exportData", title: "Export data" }
+      { name: "appCore.db.import", title: "Import data" },
+      { name: "appCore.db.export", title: "Export data" }
     ]
-  },
-  { name: 'ADM_AppStoreGroups', id: 2, title: 'Application Store Groups', orderBy: 'index',
+  }),
+
+  ADM_AppStoreGroups: new AppStore({ name: 'ADM_AppStoreGroups', id: 2, title: 'Application Store Groups', orderBy: 'index',
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'name', title: 'Name', type: 'text', required: true },
@@ -39,21 +137,24 @@ var appStores = [
       { name: 'index', title: 'Index', type: 'int', required: true },
       { name: 'stores', title: 'Stores', type: 'multiSelect', required: true, source: { name: 'ADM_AppStores', property: 'name' }}
     ]
-  },
-  { name: 'ADM_AppSettings', id: 3, title: 'Application Settings',
+  }),
+
+  ADM_AppSettings: new AppStore({ name: 'ADM_AppSettings', id: 3, title: 'Application Settings',
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'dbVersion', title: 'DB Version', type: 'int', required: true }
     ]
-  },
-  { name: 'GLO_Countries', id: 10, title: 'Countries', orderBy: 'name',
+  }),
+
+  GLO_Countries: new AppStore({ name: 'GLO_Countries', id: 10, title: 'Countries', orderBy: 'name',
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'name', title: 'Name', type: 'text', required: true },
       { name: 'code', title: 'Code', type: 'text', required: true }
     ]
-  },
-  { name: 'GLO_CountriesStay', id: 11, title: 'Countries Stay', orderBy: 'dateFrom', orderAsc: false,
+  }),
+
+  GLO_CountriesStay: new AppStore({ name: 'GLO_CountriesStay', id: 11, title: 'Countries Stay', orderBy: 'dateFrom', orderAsc: false,
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'dateFrom', title: 'From', type: 'date', required: true, align: 'center' },
@@ -61,8 +162,9 @@ var appStores = [
       { name: 'countryId', title: 'Country', type: 'select', required: true, source: { name: 'GLO_Countries', property: 'name' }},
       { name: 'days', title: 'Days', type: 'calc', align: 'right', funcName: 'numberOfDaysBetween' }
     ]
-  },
-  { name: 'GLO_HelpPlaces', id: 12, title: 'Help Places', orderBy: 'date', orderAsc: false,
+  }),
+
+  GLO_HelpPlaces: new AppStore({ name: 'GLO_HelpPlaces', id: 12, title: 'Help Places', orderBy: 'date', orderAsc: false,
     properties: [
       { name: 'id', title: 'id', type: 'int', required: true, hidden: true },
       { name: 'dateFrom', title: 'From', type: 'date', required: true, align: 'center' },
@@ -70,16 +172,18 @@ var appStores = [
       { name: 'name', title: 'Name', type: 'text', required: true },
       { name: 'days', title: 'Days', type: 'calc', align: 'right', funcName: 'numberOfDaysBetween' }
     ]
-  },
-  { name: 'GLO_People', id: 13, title: 'People',
+  }),
+
+  GLO_People: new AppStore({ name: 'GLO_People', id: 13, title: 'People',
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'name', title: 'Name', type: 'text', required: true },
       { name: 'active', title: 'Active', type: 'bool' },
       { name: 'bgColor', title: 'Color', type: 'text' }
     ]
-  },
-  { name: 'MON_Costs', id: 20, title: 'Costs', orderBy: 'date', orderAsc: false,
+  }),
+
+  MON_Costs: new AppStore({ name: 'MON_Costs', id: 20, title: 'Costs', orderBy: 'date', orderAsc: false,
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
@@ -93,8 +197,9 @@ var appStores = [
     functions: [
       { name: 'monCostsReport', title: 'Report' }
     ]
-  },
-  { name: 'MON_Incomes', id: 21, title: 'Incomes', orderBy: 'date', orderAsc: false,
+  }),
+
+  MON_Incomes: new AppStore({ name: 'MON_Incomes', id: 21, title: 'Incomes', orderBy: 'date', orderAsc: false,
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
@@ -103,8 +208,9 @@ var appStores = [
       { name: 'eur', title: 'EUR', type: 'calc', align: 'right', funcName: 'amountInEUR' },
       { name: 'desc', title: 'Description', type: 'text' }
     ]
-  },
-  { name: 'MON_Debts', id: 22, title: 'Debts', orderBy: 'date', orderAsc: false,
+  }),
+
+  MON_Debts: new AppStore({ name: 'MON_Debts', id: 22, title: 'Debts', orderBy: 'date', orderAsc: false,
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
@@ -117,15 +223,17 @@ var appStores = [
     functions: [
       { name: 'monDebtsCalc', title: 'Debts calc' }
     ]
-  },
-  { name: 'MON_CostsTypes', id: 23, title: 'Costs Types', orderBy: 'name',
+  }),
+
+  MON_CostsTypes: new AppStore({ name: 'MON_CostsTypes', id: 23, title: 'Costs Types', orderBy: 'name',
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'name', title: 'Name', type: 'text', required: true },
       { name: 'bgColor', title: 'Color', type: 'text' }
     ]
-  },
-  { name: 'MON_Currencies', id: 24, title: 'Currencies', orderBy: 'code',
+  }),
+
+  MON_Currencies: new AppStore({ name: 'MON_Currencies', id: 24, title: 'Currencies', orderBy: 'code',
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'code', title: 'Code', type: 'text', required: true },
@@ -136,8 +244,9 @@ var appStores = [
     functions: [
       { name: 'monUpdateRates', title: 'Update Rates' }
     ]
-  },
-  { name: 'MON_Rates', id: 26, title: 'Rates', orderBy: 'date', orderAsc: false,
+  }),
+
+  MON_Rates: new AppStore({ name: 'MON_Rates', id: 26, title: 'Rates', orderBy: 'date', orderAsc: false,
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
@@ -147,8 +256,9 @@ var appStores = [
     functions: [
       { name: 'monUpdateMissingRates', title: 'Update Rates' }
     ]
-  },
-  { name: 'CAR_Drives', id: 30, title: 'Drives', orderBy: 'kmTotal', orderAsc: false, onSaveFunc: 'carUpdatePricePerDrives',
+  }),
+
+  CAR_Drives: new AppStore({ name: 'CAR_Drives', id: 30, title: 'Drives', orderBy: 'kmTotal', orderAsc: false, onSaveFunc: 'carUpdatePricePerDrives',
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
@@ -161,8 +271,9 @@ var appStores = [
     functions: [
       { name: 'carDrivesReport', title: 'Report' }
     ]
-  },
-  { name: 'CAR_Refueling', id: 31, title: 'Refueling', orderBy: 'date', orderAsc: false, onSaveFunc: 'carCalcConsumptions',
+  }),
+
+  CAR_Refueling: new AppStore({ name: 'CAR_Refueling', id: 31, title: 'Refueling', orderBy: 'date', orderAsc: false, onSaveFunc: 'carCalcConsumptions',
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'date', title: 'Date', type: 'date', required: true, align: 'center' },
@@ -176,8 +287,9 @@ var appStores = [
     functions: [
       { name: 'carRefuelingReport', title: 'Report' }
     ]
-  },
-  { name: 'CAR_PricePerKm', id: 32, title: 'Price per Km', orderBy: 'kmFrom', orderAsc: false,
+  }),
+
+  CAR_PricePerKm: new AppStore({ name: 'CAR_PricePerKm', id: 32, title: 'Price per Km', orderBy: 'kmFrom', orderAsc: false,
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'kmFrom', title: 'Km from', type: 'int', required: true, align: 'right' },
@@ -188,10 +300,11 @@ var appStores = [
       { name: 'desc', title: 'Description', type: 'text' }
     ],
     functions: [
-      {name: 'carUpdatePricePerKm', title: 'Update price per Km'}
+      {name: 'carUpdateDieselPricePerKm', title: 'Update price/Km'}
     ]
-  },
-  { name: 'CAR_PricePerDay', id: 33, title: 'Price per day', orderBy: 'dateFrom', 
+  }),
+
+  CAR_PricePerDay: new AppStore({ name: 'CAR_PricePerDay', id: 33, title: 'Price per day', orderBy: 'dateFrom', 
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'dateFrom', title: 'From', type: 'date', required: true, align: 'center' },
@@ -200,20 +313,22 @@ var appStores = [
       { name: 'eurTotal', title: 'EUR total', type: 'num', required: true, align: 'right' },
       { name: 'costTypeId', title: 'Type', type: 'select', required: true, align: 'center', source: { name: 'CAR_CostsTypes', property: 'name' }}
     ]
-  },
-  { name: 'CAR_PresencePerDay', id: 34, title: 'Presence per day', orderBy: 'dateFrom', 
+  }),
+
+  CAR_PresencePerDay: new AppStore({ name: 'CAR_PresencePerDay', id: 34, title: 'Presence per day', orderBy: 'dateFrom', 
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'dateFrom', title: 'From', type: 'date', required: true, align: 'center' },
       { name: 'dateTo', title: 'To', type: 'date', align: 'center' },
       { name: 'personId', title: 'Person', type: 'select', required: true, source: { name: 'GLO_People', property: 'name' }}
     ]
-  },
-  { name: 'CAR_CostsTypes', id: 35, title: 'Costs Types', orderBy: 'name',
+  }),
+
+  CAR_CostsTypes: new AppStore({ name: 'CAR_CostsTypes', id: 35, title: 'Costs Types', orderBy: 'name',
     properties: [
       { name: 'id', title: 'Id', type: 'int', required: true, hidden: true },
       { name: 'name', title: 'Name', type: 'text', required: true },
       { name: 'bgColor', title: 'Color', type: 'text' }
     ]
-  }
-];
+  })
+};
