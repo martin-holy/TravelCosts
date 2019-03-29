@@ -1,5 +1,5 @@
 const appCore = {
-  appVersion: 'v2019.03.29',
+  appVersion: 'v2019.03.29_1',
   currentForm: {},
 
   // DB
@@ -267,7 +267,7 @@ const appCore = {
 
     this.setTitle('Travel Costs');
     document.getElementById('version').innerHTML = this.appVersion;
-    document.getElementById('mainContent').innerHTML = `<div id="appMap">${groups.join('')}</div>`;
+    document.getElementById('mainContent').innerHTML = `<div id="appMap"><img id="appMapBG" src="img/background.jpg" />${groups.join('')}</div>`;
     document.getElementById('menu').innerHTML = '<li onclick="appCore.testFunc();">Test Func</li>';
   },
 

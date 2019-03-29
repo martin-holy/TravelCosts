@@ -95,10 +95,15 @@ ul {
 
 /* Application map*/
 #appMap {
-  background-image: url('../img/background.jpg');
-  background-size: cover;
-  background-attachment: fixed;
   padding: 4px;
+}
+
+#appMapBG {
+  z-index: -1;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
 }
 
 #appMap table {
