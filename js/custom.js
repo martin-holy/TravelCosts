@@ -807,8 +807,31 @@ monUpdateMissingRates = async () => {
   await appStores.MON_Costs.update(costsToUpdate);
   await appStores.MON_Incomes.update(incomesToUpdate);
   await appStores.MON_Rates.insert(newRates);
-  delete appStores.MON_Rates.cache;
   await carUpdateDieselPricePerKm();
   await carUpdatePricePerDrives();
   appCore.log('Done', true);
 };
+
+/*tableFixedThead = () => {
+  const tables = document.querySelectorAll('.fixedTheadGrid');
+  for (const table of tables) {
+    const thead = table.querySelector('thead');
+    
+    let fixedThead = table.querySelector('.fixed');
+    if (fixedThead == null) {
+      fixedThead = document.createElement('thead');
+      fixedThead.innerHTML = thead.innerHTML;
+      fixedThead.className = 'fixed';
+      table.insertBefore(fixedThead, thead);
+    }
+
+    let widths = [];
+    thead.querySelectorAll('th').forEach(elm => widths.push(elm.clientWidth));
+    fixedThead.querySelectorAll('th').forEach((elm, i) => elm.style.width = `${widths[i]}px`);
+
+  }
+};*/
+
+tableFixedThead = () => {
+  
+}

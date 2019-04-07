@@ -1,5 +1,5 @@
 const appCore = {
-  appVersion: 'v2019.03.29_1',
+  appVersion: 'v2019.04.07',
   currentForm: {},
 
   // DB
@@ -335,10 +335,12 @@ const appCore = {
   // Generate Grid view
   createGrid: function(divId, form, gridItems, editable) {
     // THEAD
-    let thead = [];
+    let thead = [],
+        theadDivs = [];
     for (const prop of form.properties) {
       if (prop.hidden || prop.type == 'array') continue;
-      thead.push(`<th>${prop.title}</th>`);
+      thead.push(`<th>${prop.title} ↑</th>`);
+      theadDivs.push(`<div>${prop.title} ↑</div>`);
     }
   
     // TBODY
@@ -386,11 +388,29 @@ const appCore = {
       tbody.push(`<tr${editable ? ` onclick="appCore.editRecord(${item.id});"` : ''}>${tds.join('')}</tr>`);
     }
 
-    document.getElementById(divId).innerHTML = `
+    let gridDiv = document.getElementById(divId);
+    gridDiv.innerHTML = `
+      <div class="grid-fixed">
+        ${theadDivs.join('')}
+      </div>
       <table class="grid">
-        <thead><tr>${thead.join('')}</tr></thead>
+        <thead class="grid-source"><tr>${thead.join('')}</tr></thead>
         <tbody>${tbody.join('')}</tbody>
       </table>`;
+
+    // set fixed thead
+    let sourceThead = gridDiv.querySelector('.grid-source'),
+        fixedThead = gridDiv.querySelector('.grid-fixed'),
+        widths = [];
+
+    /*let tablesTest = gridDiv.querySelectorAll('table');
+    tablesTest[0].style.width = `${tablesTest[1].clientWidth}px`;*/
+
+    sourceThead.querySelectorAll('th').forEach(elm => {
+      widths.push(elm.clientWidth);
+    });
+    fixedThead.querySelectorAll('div').forEach((elm, i) => elm.style.width = `${widths[i]}px`);
+    
   },
   
   //Generate Edit form
@@ -536,6 +556,7 @@ const appCore = {
       if (prop.type != 'calc') continue;
       rec[prop.name] = await window[prop.funcName](rec);
     }
+
     await this.currentForm.iudStoreData(rec.id ? 'update' : 'insert', [rec]);
     this.hideEdit();
 
@@ -565,7 +586,12 @@ const appCore = {
         for (const prop of store.dbSchema.properties) {
           if (prop.source && prop.source.name == this.currentForm.dbSchema.name) {
             const storeItems = await store.data();
-            if (storeItems.find(x => x[prop.name].includes(this.currentForm.currentRecord.id))) {
+            if (storeItems.find(x => {
+                if (Array.isArray(x[prop.name]))
+                  return x[prop.name].includes(this.currentForm.currentRecord.id);
+                else
+                  return x[prop.name] == this.currentForm.currentRecord.id;
+              })) {
               alert(`This record can't be deleted because is used in ${store.dbSchema.title} store!`);
               return;
             }

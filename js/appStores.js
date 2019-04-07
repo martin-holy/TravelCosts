@@ -56,11 +56,18 @@ class AppStore {
 
   // insert, update and delete data from store based on action
   iudStoreData(action, data) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       let tx = appCore.db.db.transaction([this.dbSchema.name], "readwrite"),
-          store = tx.objectStore(this.dbSchema.name);
-  
+          store = tx.objectStore(this.dbSchema.name),
+          inserts = [];
+
       tx.oncomplete = () => {
+        // add new records to cache to avoid retrieving all data from DB again
+        for (const inst of inserts) {
+          inst[0].id = inst[1].result;
+          this.cache.push(inst[0]);
+        }
+
         appCore.log("All data updated in database!");
         resolve();
       };
@@ -71,7 +78,7 @@ class AppStore {
       };
 
       switch (action) {
-        case 'insert': for (const rec of data) store.add(rec); break;
+        case 'insert': for (const rec of data) inserts.push([rec, store.add(rec)]); break;
         case 'update': for (const rec of data) store.put(rec); break;
         case 'delete': for (const rec of data) store.delete(rec); break;
       }
