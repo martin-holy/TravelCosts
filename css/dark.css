@@ -182,16 +182,19 @@ ul {
   padding: 4px;
 }
 
-.grid th {
+.grid th, .grid-fixed div {
   background-color: #24282A;
   border: 1px solid #000000;
   font-size: 14px;
   padding: 2px 3px;
 }
 
-.grid thead {
-  position: sticky;
-  top: 50px;
+.grid .grid-fixed {
+  position: fixed;
+}
+
+.grid-fixed div {
+  display: inline-block;
 }
 
 #edit {
