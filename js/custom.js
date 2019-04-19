@@ -678,7 +678,14 @@ monCostsReport = async () => {
 
     dataPart = dataYear.parts.find(x => x.name == part);
     if (dataPart === undefined) {
-      let days = new Date(Number.parseInt(year), month, 0).getDate();
+      let days = 0;
+      switch (groupBy) {
+        case 1: days = new Date(Number.parseInt(year), month, 0).getDate(); break;
+        case 3: days = 90; break;
+        case 6: days = 180; break;
+        case 12: days = 365;        
+      }
+
       dataPart = { name: part, sum: 0, types: [], days: days};
       dataYear.parts.push(dataPart);
     }

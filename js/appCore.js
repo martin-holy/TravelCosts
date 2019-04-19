@@ -1,5 +1,5 @@
 const appCore = {
-  appVersion: 'v2019.04.07',
+  appVersion: 'v2019.04.19',
   currentForm: {},
 
   // DB
@@ -267,6 +267,7 @@ const appCore = {
 
     this.setTitle('Travel Costs');
     document.getElementById('version').innerHTML = this.appVersion;
+    document.getElementById('toolBar').innerHTML = '';
     document.getElementById('mainContent').innerHTML = `<div id="appMap"><img id="appMapBG" src="img/background.jpg" />${groups.join('')}</div>`;
     document.getElementById('menu').innerHTML = '<li onclick="appCore.testFunc();">Test Func</li>';
   },
@@ -288,6 +289,7 @@ const appCore = {
     this.currentForm = appStores[frm];
     this.setTitle(this.currentForm.dbSchema.title);
     this.createMenu();
+    this.createToolBar();
     this.currentForm.data({sorted: true}).then((gridItems) => {
       this.createGrid('grid', this.currentForm.dbSchema, gridItems, true);
       this.createEdit();
@@ -306,6 +308,10 @@ const appCore = {
     e.style.visibility = 'hidden';
   },
 
+  createToolBar: function() {
+    document.getElementById('toolBar').innerHTML = '<div onclick="appCore.editRecord(-1);">✹</div>';
+  },
+
   createMenu: async function() {
     let stores = await appStores.ADM_AppStores.data(),
         groups = await appStores.ADM_AppStoreGroups.data(),
@@ -320,15 +326,14 @@ const appCore = {
       items.push(`<li onclick="appCore.loadForm(\'${s.name}\');">${s.title}</li>`);
     }
 
-    items.push('<li class="liDivider">---</li>');
-    items.push('<li onclick="appCore.editRecord(-1);">New Record</li>');
-
     //forms functions
-    if (this.currentForm.dbSchema.functions)
+    if (this.currentForm.dbSchema.functions) {
+      items.push('<li class="liDivider">---</li>');
       for (const func of this.currentForm.dbSchema.functions) {
         items.push(`<li onclick="${func.name}();">${func.title}</li>`);
       }
-
+    }
+  
     document.getElementById('menu').innerHTML = items.join('');
   },
 
@@ -339,8 +344,8 @@ const appCore = {
         theadDivs = [];
     for (const prop of form.properties) {
       if (prop.hidden || prop.type == 'array') continue;
-      thead.push(`<th>${prop.title} ↑</th>`);
-      theadDivs.push(`<div>${prop.title} ↑</div>`);
+      thead.push(`<th>${prop.title}</th>`);
+      theadDivs.push(`<div>${prop.title}</div>`);
     }
   
     // TBODY
@@ -407,9 +412,10 @@ const appCore = {
     tablesTest[0].style.width = `${tablesTest[1].clientWidth}px`;*/
 
     sourceThead.querySelectorAll('th').forEach(elm => {
-      widths.push(elm.clientWidth);
+      widths.push(getComputedStyle(elm, null).width);
     });
-    fixedThead.querySelectorAll('div').forEach((elm, i) => elm.style.width = `${widths[i]}px`);
+    fixedThead.querySelectorAll('div').forEach((elm, i) => elm.style.width = widths[i]);
+    fixedThead.style.width = getComputedStyle(gridDiv.querySelector('.grid'), null).width;
     
   },
   
@@ -609,8 +615,27 @@ const appCore = {
   },
 
   testFunc: async function() {
- 
-   }
+    var expdata = [],
+        drives = await appStores.CAR_Drives.data();
+
+    for(const drive of drives) {
+      expdata.push(`${drive.date};${drive.km};${drive.desc.replace(/\n/g, '')}`);
+    }
+    
+
+    let file = new Blob([expdata.join('|')], {type: 'text/plain'}),
+        url = URL.createObjectURL(file),
+        a = document.createElement('a');
+
+    a.href = url;
+    a.download = 'drives.txt';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 0);
+  }
 };
 
 window.addEventListener('load', async () => {
@@ -618,6 +643,12 @@ window.addEventListener('load', async () => {
     .register('/TravelCosts/sw_cached_files.js')
     .then(reg => appCore.log('Service Worker: Registered'))
     .catch(err => appCore.log(`Service Worker: Error: ${err}`, true));
+
+  document.getElementById('mainContent').addEventListener('scroll', (e) => {
+    let gridFixed = document.querySelector('.grid-fixed');
+    if (gridFixed)
+      gridFixed.style.left = `-${e.target.scrollLeft}px`;
+  }, false);
 
   appCore.run();
 });

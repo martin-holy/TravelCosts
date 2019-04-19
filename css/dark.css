@@ -38,6 +38,23 @@ ul {
   font-weight: bold;
 }
 
+#toolBar {
+  display: flex;
+  margin: 2px;
+}
+
+#toolBar div {
+  border: 1px solid black;
+  border-radius: 2px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 #version {
   font-size: 10px;
   position: absolute;
@@ -63,6 +80,7 @@ ul {
   width: 32px;
   height: 30px;
   margin: 2px;
+  cursor: pointer;
 }
 
 #menu {
@@ -167,7 +185,6 @@ ul {
   white-space: nowrap;
   font-size: 12px;
   font-weight: bold;
-  margin-top: 1px;
 }
 
 .grid tr:hover td {
@@ -189,12 +206,25 @@ ul {
   padding: 2px 3px;
 }
 
-.grid .grid-fixed {
+.grid-source {
+  visibility: hidden;
+}
+
+.grid-fixed {
+  display: flex;
   position: fixed;
 }
 
 .grid-fixed div {
   display: inline-block;
+  border-left: 0;
+  border-top: 0;
+  font-weight: bold;
+  text-align: center;
+}
+
+.grid-fixed div:first-child {
+  border-left: 1px solid black;
 }
 
 #edit {
