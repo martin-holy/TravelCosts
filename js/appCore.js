@@ -1,5 +1,5 @@
 const appCore = {
-  appVersion: 'v2019.04.19',
+  appVersion: 'v2019.06.09',
   currentForm: {},
 
   // DB
@@ -442,9 +442,9 @@ const appCore = {
     document.getElementById('edit').innerHTML = `
       <table>${tbody.join('')}</table>
       <div>
-        <button onclick="appCore.saveRecord(); return false;">Save</button>
-        <button onclick="appCore.cancelEdit(); return false;">Cancel</button>
         <button onclick="appCore.deleteRecord(); return false;" id="btnDelete">Delete</button>
+        <button onclick="appCore.cancelEdit(); return false;">Cancel</button>
+        <button onclick="appCore.saveRecord(); return false;">Save</button>
       </div>`;
   },
   

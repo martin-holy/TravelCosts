@@ -22,7 +22,7 @@ amountInEUR = async (rec, roundTo = 2) => {
 numberOfDaysBetween = (rec) => {
   let a = new Date(rec.dateFrom).setHours(0, 0, 0, 0),
       b = new Date(rec.dateTo == null ? Date.now() : rec.dateTo).setHours(0, 0, 0, 0);
-  return Math.round((b - a) / (1000 * 60 * 60 * 24) + 1);
+  return Math.round((b - a) / 86400000 + 1);
 };
 
 // recalculate consumptions for all refuelings
@@ -171,7 +171,7 @@ carUpdateDieselPricePerKm = () => {
         found = false;
 
     tx.oncomplete = () => {
-      delete appCore.CAR_PricePerKm.cache;
+      delete appStores.CAR_PricePerKm.cache;
       resolve();
     };
 
@@ -749,7 +749,7 @@ monUpdateRates = () => {
         return response.json();
       throw new Error('Network response was not ok.');
     }).then(async (json) => {
-      let currencies = await appCore.MON_Currencies.data({sorted: true}),
+      let currencies = await appStores.MON_Currencies.data({sorted: true}),
           date = new Date().toYMD();
 
       for (let rec of currencies) {
