@@ -536,9 +536,9 @@ monDebtsCalc = async () => {
 
   // render result
   let form = { properties: [
-    { name: "payerId", title: "Payer", source: { name: "GLO_People", property: "name" }},
-    { name: "debtorId", title: "Debtor", source: { name: "GLO_People", property: "name" }},
-    { name: "eurCalc", title: "EUR", align: "right" }]};
+    { name: 'payerId', title: 'Payer', type: 'select', source: { name: 'GLO_People', property: 'name' }},
+    { name: 'debtorId', title: 'Debtor', type: 'select', source: { name: 'GLO_People', property: 'name' }},
+    { name: 'eurCalc', title: 'EUR', align: 'right' }]};
   await appCore.db.linkStores(form);
   appCore.createGrid('grid', form, pairs, false);
 };

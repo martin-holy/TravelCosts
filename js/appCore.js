@@ -1,5 +1,5 @@
 const appCore = {
-  appVersion: 'v2019.06.09',
+  appVersion: 'v2019.06.17',
   currentForm: {},
 
   // DB
@@ -154,13 +154,12 @@ const appCore = {
       });
     },
 
-    // now only for editing default values on select in ADM_AppStores
     linkStores: function(store) {
       return new Promise(async (resolve) => {
         for (let p of store.properties) {
           if (!p.source) continue;
-          p.source.store = this.dbSchema.find(s => s.name == p.source.name);
-          await appStores[p.source.name].data({sorted: true}); 
+          p.source.store = appStores[p.source.name];
+          await p.source.store.data({sorted: true});
         }
         resolve();
       });
@@ -510,7 +509,7 @@ const appCore = {
           case 'select': xSelect(`__${prop.name}`).set([rec[prop.name]]); break;
           case 'multiSelect': xSelect(`__${prop.name}`).set(rec[prop.name]); break;
           case 'properties':
-            await this.linkStores(rec);
+            await this.db.linkStores(rec);
             let table = document.getElementById(`__table_${prop.name}`),
                 props = rec[prop.name].filter(x => x.source),
                 trs = [];
