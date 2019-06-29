@@ -802,9 +802,12 @@ monUpdateMissingRates = async () => {
       });
   }
 
+  newRates = newRates.filter(x => x.amount);
+
   let updateEUR = function (data) {
     for (let rec of data) {
       let rate = newRates.find(x => x.date == rec.date && x.currencyId == rec.currencyId);
+      if (!rate) continue;
       rec.eur = (rec.amount / rate.amount).round(2);
     }
   };

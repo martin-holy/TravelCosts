@@ -1,5 +1,5 @@
 const appCore = {
-  appVersion: 'v2019.06.17',
+  appVersion: 'v2019.06.23',
   currentForm: {},
 
   // DB
@@ -614,7 +614,47 @@ const appCore = {
   },
 
   testFunc: async function() {
-    var expdata = [],
+    // countries stay
+    let countriesStay = await appStores.GLO_CountriesStay.data(),
+        countries = await appStores.GLO_Countries.data();
+        stay = [];
+
+    for (let cs of countriesStay) {
+      country = stay.find(x => x.id == cs.countryId);
+      if (country == undefined) {
+        cname = countries.find(x => x.id == cs.countryId).name;
+        country = {id: cs.countryId, name: cname, days: 0};
+        stay.push(country);
+      }
+
+      if (cs.days == undefined) 
+        country.days += numberOfDaysBetween({ dateFrom: cs.dateFrom, dateTo: Date.now() });
+      else
+        country.days += cs.days;
+
+    }
+    stay.orderBy('days');
+    for(let s of stay) {
+      console.log(`${s.name},${s.days}`);
+    }
+
+    /*
+    // km za rok
+    let drives = await appStores.CAR_Drives.data(),
+        years = [];
+    
+    for (let d of drives) {
+      let year = d.date.substring(0, 4),
+          dataYear = years.find(x => x.year == year);
+      
+      if (dataYear == undefined) {
+        dataYear = { year: year, sum: 0};
+        years.push(dataYear);
+      }
+
+      dataYear.sum += d.km;
+    }*/
+    /*var expdata = [],
         drives = await appStores.CAR_Drives.data();
 
     for(const drive of drives) {
@@ -633,7 +673,7 @@ const appCore = {
     setTimeout(() => {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-    }, 0);
+    }, 0);*/
   }
 };
 
