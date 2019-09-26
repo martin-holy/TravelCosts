@@ -1,5 +1,5 @@
 const appCore = {
-  appVersion: 'v2019.06.23',
+  appVersion: 'v2019.09.26',
   currentForm: {},
 
   // DB

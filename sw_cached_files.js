@@ -1,5 +1,5 @@
 const appName = 'TravelCosts',
-      appVersion = 'v2019.06.23',
+      appVersion = 'v2019.09.26',
       cacheName = `${appName}_${appVersion}`;
 
 // Call Install Event

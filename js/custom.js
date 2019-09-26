@@ -147,11 +147,12 @@ carUpdateDieselPricePerKm = () => {
     }
 
     //Last record for drivers after last full tank refueling
+    let lastPrice = arrPrice[arrPrice.length - 1];
     arrPrice.push({
-      kmFrom: arrPrice[arrPrice.length - 1].kmTo,
-      kmTo: arrPrice[arrPrice.length - 1].kmTo + 1000,
+      kmFrom: lastPrice.kmTo,
+      kmTo: lastPrice.kmTo + 3000,
       consumption: 7.3,
-      EURPerL: arrPrice[arrPrice.length - 1].EURPerL
+      EURPerL: lastPrice.EURPerL
     });
 
     //Adding eurTotal, eurPerKm and found flag
