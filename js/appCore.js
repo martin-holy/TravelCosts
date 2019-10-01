@@ -1,5 +1,5 @@
 const appCore = {
-  appVersion: 'v2019.09.26',
+  appName: 'TravelCosts',
   currentForm: {},
 
   // DB
@@ -265,7 +265,7 @@ const appCore = {
     }
 
     this.setTitle('Travel Costs');
-    document.getElementById('version').innerHTML = this.appVersion;
+    document.getElementById('version').innerHTML = localStorage.getItem('appVersion');
     document.getElementById('toolBar').innerHTML = '';
     document.getElementById('mainContent').innerHTML = `<div id="appMap"><img id="appMapBG" src="img/background.jpg" />${groups.join('')}</div>`;
     document.getElementById('menu').innerHTML = '<li onclick="appCore.testFunc();">Test Func</li>';
@@ -418,7 +418,7 @@ const appCore = {
     
   },
   
-  //Generate Edit form
+  // Generate Edit form
   createEdit: function() {
     let tbody = [];
   
@@ -447,7 +447,7 @@ const appCore = {
       </div>`;
   },
   
-  //Generate input for editing
+  // Generate input for editing
   getInput: function(prop) {
     let required = prop.required ? 'required' : '',
         readonly = prop.readonly ? 'readonly' : '';
@@ -573,17 +573,17 @@ const appCore = {
     });
   },
   
-  //Cancel Edit
+  // Cancel Edit
   cancelEdit: function() {
     this.hideEdit();
   },
   
-  //Hide Edit form
+  // Hide Edit form
   hideEdit: function() {
     document.getElementById('edit').style.display = 'none';
   },
   
-  //Delete Record
+  // Delete Record
   deleteRecord: async function() {
     if (confirm('Do you want to delete this record?')) {
       //check if can be deleted
@@ -678,6 +678,9 @@ const appCore = {
 };
 
 window.addEventListener('load', async () => {
+  // my way to update cache (:P)
+  await updateCache(appCore.appName);
+
   navigator.serviceWorker
     .register('/TravelCosts/sw_cached_files.js')
     .then(reg => appCore.log('Service Worker: Registered'))

@@ -194,7 +194,7 @@ var xSelect = function(id) {
       }
     }
   };
-}
+};
 
 var getHttpRequest = function (url) {
   return new Promise((resolve, reject) => {
@@ -206,4 +206,47 @@ var getHttpRequest = function (url) {
     httpRequest.open('GET', url, true);
     httpRequest.send();
   });
+};
+
+// Update Cache
+function updateCache(appName) {
+  // get json with updates
+  return fetch('/TravelCosts/updates.json')
+    .then((response) => {
+      if (response.ok)
+        return response.json();
+      throw new Error('Network response was not ok when getting updates.');
+    }).then(json => {
+      let ver = localStorage.getItem('appVersion');
+
+      // collect files for update
+      let files = new Set();
+      for (let u of json.updates)
+        if (ver == null || u.version > ver) {
+          ver = u.version;
+          for (let f of u.files)
+            files.add(f);
+        }
+
+      if (files.size == 0) return;
+
+      localStorage.setItem('appVersion', ver);
+
+      // update files in cache
+      return caches.open(appName).then(cache => {
+        console.log('Update: Caching Files');
+
+        //return cache.addAll(files); // <= this doesn't work
+
+        let x = [];
+        for (let key of files.keys())
+          x.push(key);
+
+        return Promise.all(x.map(f => {
+          return cache.delete(f).then(cache.add(f));
+        }));
+      });
+    }).catch((error) => {
+      console.log(error.message);
+    });
 };

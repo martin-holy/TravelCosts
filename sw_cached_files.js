@@ -1,13 +1,11 @@
-const appName = 'TravelCosts',
-      appVersion = 'v2019.09.26',
-      cacheName = `${appName}_${appVersion}`;
+const appName = 'TravelCosts';
 
-// Call Install Event
+// Install Event
 self.addEventListener('install', e => {
   console.log('Service Worker: Installed');
 
   e.waitUntil(
-    caches.open(cacheName).then(cache => {
+    caches.open(appName).then(cache => {
       console.log('Service Worker: Caching Files');
       return cache.addAll([
         '/TravelCosts/',
@@ -29,29 +27,37 @@ self.addEventListener('install', e => {
   );
 });
 
-// Call Activate Event
+// Activate Event
 self.addEventListener('activate', e => {
   console.log('Service Worker: Activated');
-  // Remove unwanted caches
-  e.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cache => {
-          if (cache.startsWith(appName) && cache != cacheName) {
-            console.log('Service Worker: Clearing Old Cache');
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
-  );
+
+  // cache is updated in appCore.updateCache() and not recreated with new name
+  // so there is no need to delete old cache
+
   return self.clients.claim();
 });
 
-// Call Fetch Event
+// Fetch Event
 self.addEventListener('fetch', e => {
   // Respond with Cache falling back to Network
-  e.respondWith(async function() {
-    return await caches.match(e.request) || fetch(e.request);
-  }());
+  e.respondWith(
+    caches.open(appName).then(cache => {
+      return cache.match(e.request).then(response => {
+        if (response)
+          return response;
+
+        return fetch(e.request).then(networkResponse => {
+          if (networkResponse.ok && networkResponse.status == 200 && networkResponse.type == 'basic')
+            if (!e.request.url.endsWith('updates.json'))
+              cache.put(e.request, networkResponse.clone());
+
+          return networkResponse;
+        });
+      }).catch(error => {
+        console.log('Error in fetch handler:', error);
+
+        throw error;
+      });
+    })
+  );
 });
