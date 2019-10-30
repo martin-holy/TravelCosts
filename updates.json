@@ -1,5 +1,6 @@
 {
   "updates": [
-    { "version": "v2019.09.30", "files":["/TravelCosts/js/appCore.js"] }
+    { "version": "v2019.09.30", "files":["/TravelCosts/js/appCore.js"] },
+    { "version": "v2019.10.30", "files":["/TravelCosts/js/custom.js"] }
   ]
 }

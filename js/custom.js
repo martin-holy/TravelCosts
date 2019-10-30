@@ -724,8 +724,13 @@ monCostsReport = async () => {
 
       if (currentYear != year) {
         currentYear = year;
-        tds.push(`<td class="bubbleTd" rowspan="${year.parts.length}">${year.name}</td>`);
-        tds.push(`<td class="bubbleTd" rowspan="${year.parts.length}">${year.sum.round(0)}</td>`);
+        
+        if (groupBy == 12){
+          tds.push(`<td class="bubbleTd" rowspan="${year.parts.length}">${year.name}</td>`);
+          tds.push(`<td class="bubbleTd" rowspan="${year.parts.length}">${year.sum.round(0)}</td>`);
+        } else{
+          tds.push(`<td class="bubbleTd" rowspan="${year.parts.length}">${year.name}<br />${year.sum.round(0)}</td>`);
+        }
       }
 
       if (groupBy != 12) {
