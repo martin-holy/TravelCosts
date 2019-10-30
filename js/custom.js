@@ -306,6 +306,101 @@ carDrivesReport = async () => {
   appCore.contentTabs.active('treeView');
 };
 
+carDrivesReport2 = async () => {
+  if (document.getElementById('__rep_DrivesReport2') == null) {
+    let selectGroupBy = xSelect('__rep_groupBy'),
+        divRep = document.createElement('div'),
+        divRepData = document.createElement('div'),
+        divSelects = document.createElement('div');
+
+    selectGroupBy.create([{value:1,name:'1 Month'},{value:3,name:'3 Months'},{value:6,name:'6 Months'},{value:12,name:'1 Year'}], false);
+    selectGroupBy.set([1]);
+    selectGroupBy.element.dataset.onchange = 'carDrivesReport2';
+
+    divSelects.appendChild(selectGroupBy.element);
+    divRep.appendChild(divSelects);
+    divRep.appendChild(divRepData);
+    divRep.id = '__rep_DrivesReport2';
+    divRepData.id = '__rep_DrivesReport2Data';
+
+    document.getElementById('treeView').innerHTML = '';
+    document.getElementById('treeView').appendChild(divRep);
+  }
+  
+  let groupBy = xSelect('__rep_groupBy').get()[0],
+      records = Array.from(await appStores.CAR_Drives.data()).orderBy('date'),
+      years = [];
+  
+  for (let r of records) {
+    let year = r.date.substring(0, 4),
+        month = Number.parseInt(r.date.substring(5, 7)),
+        part = Math.floor((month - 1) / groupBy) + 1,
+        dataYear,
+        dataPart;
+    
+    dataYear = years.find(x => x.name == year);
+    if (dataYear === undefined) {
+      dataYear = { name: year, sumKm: 0, sumEur: 0, parts: [] };
+      years.push(dataYear);
+    }
+
+    dataPart = dataYear.parts.find(x => x.name == part);
+    if (dataPart === undefined) {
+      let days = 0;
+      switch (groupBy) {
+        case 1: days = new Date(Number.parseInt(year), month, 0).getDate(); break;
+        case 3: days = 90; break;
+        case 6: days = 180; break;
+        case 12: days = 365;        
+      }
+
+      dataPart = { name: part, sumKm: 0, sumEur: 0, days: days};
+      dataYear.parts.push(dataPart);
+    }
+
+    dataYear.sumKm += r.km;
+    dataYear.sumEur += r.eur;
+    dataPart.sumKm += r.km;
+    dataPart.sumEur += r.eur;
+  }
+
+  let trs = [],
+      currentYear;
+  years.orderBy('name', false);
+  for (let year of years) {
+    year.parts.orderBy('name', false);
+    for (let part of year.parts) {
+      let tds = [];
+
+      if (currentYear != year) {
+        currentYear = year;
+        
+        if (groupBy == 12){
+          tds.push(`<td class="bubbleTd" rowspan="${year.parts.length}">${year.name}</td>`);
+          tds.push(`<td class="bubbleTd" rowspan="${year.parts.length}">${year.sumKm.round(0)}</td>`);
+        } else{
+          tds.push(`<td class="bubbleTd" rowspan="${year.parts.length}">${year.name}<br />${year.sumKm.round(0)}</td>`);
+        }
+      }
+
+      if (groupBy != 12) {
+        tds.push(`<td class="bubbleTd">${part.name.convertToRoman()}</td>`);
+        tds.push(`<td class="bubbleTd">${part.sumKm.round(0)}</td>`);
+      }
+
+      tds.push(`<td class="bubbleTd">${part.sumEur.round(0)}€</td>`);
+
+      let sumKmWidth = (part.sumKm / 10).round(0);
+      let rect = `<rect x="0" width="${sumKmWidth}" height="100%" fill="#17479E" />`;
+      tds.push(`<td><svg height="20px" width="${sumKmWidth}px" xmlns="http://www.w3.org/2000/svg" display="block">${rect}</svg></td>`);
+      trs.push(`<tr>${tds.join('')}</tr>`)
+    }
+  }
+
+  document.getElementById('__rep_DrivesReport2Data').innerHTML = `<table>${trs.join('')}</table>`;
+  appCore.contentTabs.active('treeView');
+};
+
 carRefuelingReport = async () => {
   const pxPerL = 40,
         pxPerKm = 0.05,

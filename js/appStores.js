@@ -276,7 +276,8 @@ const appStores = {
       { name: 'people', title: 'People', type: 'multiSelect', required: true, default: [1,2], source: { name: 'GLO_People', property: 'name' }}
     ],
     functions: [
-      { name: 'carDrivesReport', title: 'Report' }
+      { name: 'carDrivesReport', title: 'Report Km/Days/Places' },
+      { name: 'carDrivesReport2', title: 'Report Km/EUR' }
     ]
   }),
 
