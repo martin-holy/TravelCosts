@@ -328,10 +328,38 @@ carDrivesReport2 = async () => {
   }
   
   let groupBy = xSelect('__rep_groupBy').get()[0],
-      records = Array.from(await appStores.CAR_Drives.data()).orderBy('date'),
+      drivesRecords = Array.from(await appStores.CAR_Drives.data()),
+      pricesPerDay = Array.from(await appStores.CAR_PricePerDay.data()),
+      outputPPD = [],
       years = [];
+
+  // get min max years
+  let yearFrom = 0,
+      yearTo = 0;
+  for (let o of pricesPerDay) {
+    let from = Number.parseInt(o.dateFrom.substring(0, 4));
+    let to = Number.parseInt(o.dateTo.substring(0, 4))
+    if (yearFrom == 0 || yearFrom > from) yearFrom = from;
+    if (yearTo < to) yearTo = to;
+  }
+
+  let monthIntervals = getMonthIntervals(yearFrom, yearTo),
+      intervals = combineDateIntervals([monthIntervals, pricesPerDay]);
+
+  mapDataToIntervals(pricesPerDay, 'prices', intervals);
+  splitPriceInIntervals(intervals);
+
+  for (let i of intervals) {
+    outputPPD.push({
+      date: i.dateFrom,
+      km: 0,
+      eur: i.eurTotal
+    });
+  }
   
-  for (let r of records) {
+  let allRecords = outputPPD.concat(drivesRecords);
+  
+  for (let r of allRecords) {
     let year = r.date.substring(0, 4),
         month = Number.parseInt(r.date.substring(5, 7)),
         part = Math.floor((month - 1) / groupBy) + 1,
@@ -499,6 +527,18 @@ carRefuelingReport = async () => {
   appCore.contentTabs.active('treeView');
 };
 
+getMonthIntervals = (yearFrom, yearTo) => {
+  let monthIntervals = [];
+  for (y = yearFrom; y < yearTo + 1; y++) {
+    for (let m = 0; m < 12; m++) {
+      monthIntervals.push({ 
+        dateFrom: new Date(y, m, 1).toYMD(), 
+        dateTo: new Date(y, m + 1, 0).toYMD() });
+    }
+  }
+  return monthIntervals;
+};
+
 combineDateIntervals = (arrays) => {
   let from = new Set(),
       to = new Set();
@@ -644,17 +684,9 @@ monGetTransportData = async (personId) => {
       pricesPerDay = Array.from(await appStores.CAR_PricePerDay.data()),
       yearFrom = Number.parseInt(presencePerDay[0].dateFrom.substring(0, 4)),
       yearTo = new Date().getFullYear(),
-      monthIntervals = [],
+      monthIntervals = getMonthIntervals(yearFrom, yearTo),
       intervals = [],
       output = [];
-
-  for (y = yearFrom; y < yearTo + 1; y++) {
-    for (let m = 0; m < 12; m++) {
-      monthIntervals.push({ 
-        dateFrom: new Date(y, m, 1).toYMD(), 
-        dateTo: new Date(y, m + 1, 0).toYMD() });
-    }
-  }
 
   intervals = combineDateIntervals([monthIntervals, presencePerDay, pricesPerDay]);
   mapDataToIntervals(presencePerDay, 'people', intervals);
@@ -922,27 +954,3 @@ monUpdateMissingRates = async () => {
   await carUpdatePricePerDrives();
   appCore.log('Done', true);
 };
-
-/*tableFixedThead = () => {
-  const tables = document.querySelectorAll('.fixedTheadGrid');
-  for (const table of tables) {
-    const thead = table.querySelector('thead');
-    
-    let fixedThead = table.querySelector('.fixed');
-    if (fixedThead == null) {
-      fixedThead = document.createElement('thead');
-      fixedThead.innerHTML = thead.innerHTML;
-      fixedThead.className = 'fixed';
-      table.insertBefore(fixedThead, thead);
-    }
-
-    let widths = [];
-    thead.querySelectorAll('th').forEach(elm => widths.push(elm.clientWidth));
-    fixedThead.querySelectorAll('th').forEach((elm, i) => elm.style.width = `${widths[i]}px`);
-
-  }
-};*/
-
-tableFixedThead = () => {
-  
-}

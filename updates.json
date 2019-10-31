@@ -4,6 +4,7 @@
     { "version": "v2019.10.30", "files":["/TravelCosts/js/custom.js"] },
     { "version": "v2019.10.30.2", "files":[
       "/TravelCosts/js/custom.js",
-      "/TravelCosts/js/appStores.js"] }
+      "/TravelCosts/js/appStores.js"] },
+    { "version": "v2019.10.31", "files":["/TravelCosts/js/custom.js"] }
   ]
 }
