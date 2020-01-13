@@ -63,10 +63,11 @@ class AppStore {
 
       tx.oncomplete = () => {
         // add new records to cache to avoid retrieving all data from DB again
-        for (const inst of inserts) {
-          inst[0].id = inst[1].result;
-          this.cache.push(inst[0]);
-        }
+        if (this.cache)
+          for (const inst of inserts) {
+            inst[0].id = inst[1].result;
+            this.cache.push(inst[0]);
+          }
 
         app.log('All data updated in database!');
         resolve();

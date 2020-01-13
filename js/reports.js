@@ -313,7 +313,7 @@ reports.carDrives2 = {
           [yi, miFrom, miTo] = reports.getYearMonthIndex(offset, 22, self.groupBy),
           year = self.data[self.data.length - 1 - yi];
 
-    if (yi > self.data.length)
+    if (yi > self.data.length || !year)
       return null;
 
     const drives = [];
@@ -630,7 +630,7 @@ reports.monCosts = {
     const costs = (await appStores.MON_Costs.data())
             .map(x => ({ date: x.date, eur: x.eur, desc: x.desc, costTypeId: x.costTypeId })).orderBy('date', false),
           person = (await appStores.GLO_People.data()).find(x => x.active === true),
-          transportData = await this.getTransportData(person.id),
+          transportData = await this.getTransportData(person ? person.id : 0),
           minMaxDate = reports.getMinMaxDatesFromRange((await appStores.CAR_PricePerDay.data())
             .concat([{ dateTo: costs[0].date, dateFrom: costs[costs.length - 1].date }])),
           yearFrom = Number.parseInt(minMaxDate[0].substring(0, 4)),

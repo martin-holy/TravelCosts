@@ -310,7 +310,8 @@ const app = {
       canDrag: false,
       limitTop: 0,
 
-      init: function() {
+      init: function () {
+        this.show(-100);
         this.cursorHeight = app.UI.elmCursor.clientHeight;
         this.hide();
 

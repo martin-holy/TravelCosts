@@ -72,7 +72,7 @@ ul {
   overflow: auto;
   display: none;
   flex-shrink: 0;
-  height: 85px;
+  height: 125px;
   border: 1px solid black;
   background-color: #24282A;
 }
@@ -82,6 +82,7 @@ ul {
   height: 20px;
   position: absolute;
   left: 0;
+  display: none;
 }
 
 #cursor polygon {
