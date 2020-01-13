@@ -10,18 +10,40 @@
     <script src="js/extensions.js"></script>
     <script src="js/appStores.js"></script>
     <script src="js/appCore.js"></script>
+    <script src="js/reports.js"></script>
     <script src="js/custom.js"></script>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/dark.css" />
   </head>
   <body>
-    <div id="heather">
-      <div id="menuButton" onclick="appCore.menuOpen();">☰</div>
+    
+    <!-- Header -->
+    <div id="header">
+      <div id="menuButton" onclick="app.UI.menu.open();">☰</div>
       <span id="title" class="rborder">Travel Costs</span>
       <div id="toolBar"></div>
       <span id="version"></span>
     </div>
-    <div id="mainContent"></div>
-    <ul id="menu" onclick="appCore.menuHide(this);"></ul>
+
+    <!-- Main Content -->
+    <div id="mainContent">
+      <div id="grid"></div>
+      <div id="edit"></div>
+      <div id="report"></div>
+      <div id="appMap"></div>
+    </div>
+
+    <!-- Info Cursor -->
+    <div id="cursor">
+      <svg height="20" width="20">
+        <polygon points="0,0 20,10 0,20" />
+      </svg>
+    </div>
+
+    <!-- Menu -->
+    <ul id="menu" onclick="app.UI.menu.hide(this);"></ul>
+
+    <!-- Footer -->
+    <div id="footer"></div>
   </body>
 </html>

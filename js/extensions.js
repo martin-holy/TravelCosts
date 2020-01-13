@@ -1,7 +1,8 @@
 if (!Date.prototype.format) {
+// ReSharper disable once NativeTypePrototypeExtending
   Date.prototype.format = function (format) //author: meizz
   {
-    var o = {
+    const o = {
       "M+": this.getMonth() + 1, //month
       "d+": this.getDate(), //day
       "h+": this.getHours(), //hour
@@ -13,24 +14,26 @@ if (!Date.prototype.format) {
 
     if (/(y+)/.test(format))
       format = format.replace(RegExp.$1,
-      (this.getFullYear() + "").substr(4 - RegExp.$1.length));
-    for (var k in o)
-      if (new RegExp("(" + k + ")").test(format))
+      (this.getFullYear() + '').substr(4 - RegExp.$1.length));
+    for (const k in o)
+      if (new RegExp('(' + k + ')').test(format))
         format = format.replace(RegExp.$1,
-          RegExp.$1.length == 1 ? o[k] :
-          ("00" + o[k]).substr(("" + o[k]).length));
+          RegExp.$1.length === 1 ? o[k] :
+          ('00' + o[k]).substr(('' + o[k]).length));
     return format;
   };
 }
 
 if (!Date.prototype.getDOY) {
+// ReSharper disable once NativeTypePrototypeExtending
   Date.prototype.getDOY = function () {
-    var onejan = new Date(this.getFullYear(), 0, 1);
+    const onejan = new Date(this.getFullYear(), 0, 1);
     return Math.ceil((this - onejan) / 86400000);
   };
 }
 
 if (!Date.prototype.toYMD) {
+// ReSharper disable once NativeTypePrototypeExtending
   Date.prototype.toYMD = function () {
     return [
       this.getFullYear(),
@@ -41,6 +44,7 @@ if (!Date.prototype.toYMD) {
 }
 
 if (!Date.prototype.addDays) {
+// ReSharper disable once NativeTypePrototypeExtending
   Date.prototype.addDays = function(days) {
     return this.setDate(this.getDate() + days) && this;
   };
@@ -51,47 +55,19 @@ function daysInYear(y) {
 }
 
 if (!Number.prototype.round) {
+// ReSharper disable once NativeTypePrototypeExtending
   Number.prototype.round = function(places) {
     places = Math.pow(10, places);
     return Math.round(this * places) / places;
   };
 }
 
-if (!Number.prototype.convertToRoman) {
-  Number.prototype.convertToRoman = function() {
-    let roman = {
-      M: 1000,
-      CM: 900,
-      D: 500,
-      CD: 400,
-      C: 100,
-      XC: 90,
-      L: 50,
-      XL: 40,
-      X: 10,
-      IX: 9,
-      V: 5,
-      IV: 4,
-      I: 1
-    },
-    str = '',
-    num = this;
-
-    for (let i of Object.keys(roman)) {
-      let q = Math.floor(num / roman[i]);
-      num -= q * roman[i];
-      str += i.repeat(q);
-    }
-
-    return str;
-  };
-}
-
 if (!Array.prototype.orderBy) {
+// ReSharper disable once NativeTypePrototypeExtending
   Array.prototype.orderBy = function(orderBy, asc = true) {
     return this.sort((a, b) => {
-      let valA = a[orderBy],
-          valB = b[orderBy];
+      const valA = a[orderBy],
+            valB = b[orderBy];
       if (valA < valB) return asc ? -1 : 1;
       if (valA > valB) return asc ? 1 : -1;
       return 0;
@@ -104,8 +80,8 @@ var xSelect = function(id) {
     element: document.getElementById(id),
 
     create: function (data, multi = true, withDataSource = false) {
-      let options = [],
-          elm = document.createElement('div');
+      const options = [],
+            elm = document.createElement('div');
       
       data.forEach(x => options.push(`<li value='${x.value}' onclick="xSelect('${id}').select(this);">${x.name}</li>`));
       elm.id = id;
@@ -123,9 +99,9 @@ var xSelect = function(id) {
     },
 
     get: function() {
-      let vals = [];
-      this.element.querySelectorAll('.optionSelected').forEach(x => vals.push(x.value));
-      return vals;
+      const values = [];
+      this.element.querySelectorAll('.optionSelected').forEach(x => values.push(x.value));
+      return values;
     },
 
     set: function (data) {
@@ -135,7 +111,7 @@ var xSelect = function(id) {
     },
 
     select: function(li) {
-      if (this.element.dataset.multi == 'false') {
+      if (this.element.dataset.multi === 'false') {
         this.element.querySelectorAll('li').forEach(x => x.classList.remove('optionSelected'));
         this.show();
       }
@@ -144,14 +120,14 @@ var xSelect = function(id) {
     },
 
     list: function() {
-      let out = [],
-          dataSource = JSON.parse(this.element.dataset.dataSource || null);
+      const out = [],
+            dataSource = JSON.parse(this.element.dataset.dataSource || null);
 
       this.element.querySelectorAll('.optionSelected').forEach(x => {
         let style = '';
 
         if (dataSource != null) {
-          let bgColor = dataSource.find(ds => ds.value == x.value).bgColor; 
+          const bgColor = dataSource.find(ds => ds.value === x.value).bgColor; 
           if (bgColor !== undefined)
             style = ` style="background-color:${bgColor};"`;
         }
@@ -161,13 +137,20 @@ var xSelect = function(id) {
 
       this.element.querySelector('.selectedOptions').innerHTML = out.join('');
 
-      if (this.element.dataset.onchange)
-        window[this.element.dataset.onchange]();
+      if (this.element.dataset.onchange) {
+        const nss = this.element.dataset.onchange.split('.'),
+              func = nss.pop();
+        let context = window;
+        for (let i = 0; i < nss.length; i++)
+          context = context[nss[i]];
+
+        context[func].apply(context);
+      }
     },
 
     show: function() {
-      let ul = this.element.querySelector('ul'),
-          hide = ul.style.visibility == 'visible';
+      const ul = this.element.querySelector('ul'),
+            hide = ul.style.visibility === 'visible';
           
       ul.style.visibility = hide ? 'hidden' : 'visible';
       this.element.querySelector('.button').innerHTML = hide ? '▼' : '✔';
@@ -188,65 +171,14 @@ var xSelect = function(id) {
         currentElm = currentElm.parentElement;
       }
 
-      for (let elm of Array.from(document.getElementsByClassName('xSelect'))) {
-        if (elm.querySelector('ul').style.visibility == 'visible' && elm != select) 
+      for (const elm of Array.from(document.getElementsByClassName('xSelect'))) {
+        if (elm.querySelector('ul').style.visibility === 'visible' && elm !== select) 
           xSelect(elm.id).show(); // hide
       }
     }
   };
 };
 
-var getHttpRequest = function (url) {
-  return new Promise((resolve, reject) => {
-    let httpRequest = new XMLHttpRequest();
-    httpRequest.onreadystatechange = () => {
-      if (this.readyState == 4 && this.status == 200)
-        resolve(this.responseText);
-    }
-    httpRequest.open('GET', url, true);
-    httpRequest.send();
-  });
-};
-
-// Update Cache
-function updateCache(appName) {
-  // get json with updates
-  return fetch('/TravelCosts/updates.json')
-    .then((response) => {
-      if (response.ok)
-        return response.json();
-      throw new Error('Network response was not ok when getting updates.');
-    }).then(json => {
-      let ver = localStorage.getItem('appVersion');
-
-      // collect files for update
-      let files = new Set();
-      for (let u of json.updates)
-        if (ver == null || u.version > ver) {
-          ver = u.version;
-          for (let f of u.files)
-            files.add(f);
-        }
-
-      if (files.size == 0) return;
-
-      localStorage.setItem('appVersion', ver);
-
-      // update files in cache
-      return caches.open(appName).then(cache => {
-        console.log('Update: Caching Files');
-
-        //return cache.addAll(files); // <= this doesn't work
-
-        let x = [];
-        for (let key of files.keys())
-          x.push(key);
-
-        return Promise.all(x.map(f => {
-          return cache.delete(f).then(cache.add(f));
-        }));
-      });
-    }).catch((error) => {
-      console.log(error.message);
-    });
-};
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

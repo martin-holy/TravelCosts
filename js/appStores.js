@@ -9,7 +9,7 @@ class AppStore {
     //       orderAsc(bool) => true is default
 
     // Get Store Records
-    let promises = [];
+    const promises = [];
     promises.push(new Promise((resolve, reject) => {
       if (args.sorted) { // sort by default
         args.orderBy = this.dbSchema.orderBy;
@@ -22,8 +22,8 @@ class AppStore {
           this.cache.orderBy(args.orderBy, args.orderAsc);
         resolve(this.cache);
       } else {
-        let tx = appCore.db.db.transaction([this.dbSchema.name], 'readonly'),
-            request = tx.objectStore(this.dbSchema.name).getAll();
+        const tx = app.DB.db.transaction([this.dbSchema.name], 'readonly'),
+              request = tx.objectStore(this.dbSchema.name).getAll();
         
         request.onsuccess = (e) => {
           this.cache = e.target.result;
@@ -34,13 +34,13 @@ class AppStore {
 
         request.onerror = (e) => {
           reject(e.target.errorCode);
-          appCore.log(`getStoreRecords: ${e.target.errorCode}`, true);
+          app.log(`getStoreRecords: ${e.target.errorCode}`, true);
         };
       }
     }));
 
     // Link Stores and Get Linked Stores Records
-    for (let prop of this.dbSchema.properties) {
+    for (const prop of this.dbSchema.properties) {
       if (!prop.source) continue;
       prop.source.store = appStores[prop.source.name];
       promises.push(prop.source.store.data({sorted: true}));
@@ -57,9 +57,9 @@ class AppStore {
   // insert, update and delete data from store based on action
   iudStoreData(action, data) {
     return new Promise(async (resolve, reject) => {
-      let tx = appCore.db.db.transaction([this.dbSchema.name], "readwrite"),
-          store = tx.objectStore(this.dbSchema.name),
-          inserts = [];
+      const tx = app.DB.db.transaction([this.dbSchema.name], 'readwrite'),
+            store = tx.objectStore(this.dbSchema.name),
+            inserts = [];
 
       tx.oncomplete = () => {
         // add new records to cache to avoid retrieving all data from DB again
@@ -68,12 +68,12 @@ class AppStore {
           this.cache.push(inst[0]);
         }
 
-        appCore.log("All data updated in database!");
+        app.log('All data updated in database!');
         resolve();
       };
   
       tx.onerror = (e) => {
-        appCore.log("There was an error:" + e.target.errorCode, true);
+        app.log(`There was an error:${e.target.errorCode}`, true);
         reject();
       };
 
@@ -98,7 +98,7 @@ class AppStore {
   }
 
   async getRecordById(id) {
-    return (await this.data()).find(rec => rec.id == id);
+    return (await this.data()).find(rec => rec.id === id);
   }
 };
 
@@ -122,7 +122,7 @@ const appStores = {
         { name: 'required', title: 'Required', type: 'bool' },
         { name: 'hidden', title: 'Hidden', type: 'bool' },
         { name: 'source', title: 'Source', type: 'select', source: { name: 'ADM_AppStores', property: 'title' }},
-        { name: 'align', title: 'Align', type: 'select', source: { name: 'ADM_Aligments', property: 'id' }},
+        { name: 'align', title: 'Align', type: 'select', source: { name: 'ADM_Alignments', property: 'id' }},
         { name: 'funcName', title: 'Function', type: 'select', source: { name: 'ADM_PropertyFunctions', property: 'id' }}
       ]},
       { name: 'functions', title: 'Functions', type: 'array', data: [], properties: [
@@ -131,8 +131,8 @@ const appStores = {
       ]}*/
     ],
     functions: [
-      { name: "appCore.db.import", title: "Import data" },
-      { name: "appCore.db.export", title: "Export data" }
+      { name: 'app.DB.import', title: 'Import data' },
+      { name: 'app.DB.export', title: 'Export data' }
     ]
   }),
 
@@ -202,7 +202,7 @@ const appStores = {
       { name: 'countryId', title: 'Country', type: 'select', required: true, default: [16], source: { name: 'GLO_Countries', property: 'name' }}
     ],
     functions: [
-      { name: 'monCostsReport', title: 'Report' }
+      { name: 'reports.monCosts.run', title: 'Report' }
     ]
   }),
 
@@ -276,8 +276,8 @@ const appStores = {
       { name: 'people', title: 'People', type: 'multiSelect', required: true, default: [1,2], source: { name: 'GLO_People', property: 'name' }}
     ],
     functions: [
-      { name: 'carDrivesReport', title: 'Report Km/Days/Places' },
-      { name: 'carDrivesReport2', title: 'Report Km/EUR' }
+      { name: 'reports.carDrives.run', title: 'Report Km/Days/Places' },
+      { name: 'reports.carDrives2.run', title: 'Report Km/EUR' }
     ]
   }),
 
@@ -293,7 +293,7 @@ const appStores = {
       { name: 'consumption', title: 'l/100km', type: 'readOnly', align: 'right' }
     ],
     functions: [
-      { name: 'carRefuelingReport', title: 'Report' }
+      { name: 'reports.carRefueling.run', title: 'Report' }
     ]
   }),
 

@@ -5,6 +5,16 @@
     { "version": "v2019.10.30.2", "files":[
       "/TravelCosts/js/custom.js",
       "/TravelCosts/js/appStores.js"] },
-    { "version": "v2019.10.31", "files":["/TravelCosts/js/custom.js"] }
+    { "version": "v2019.10.31", "files": [ "/TravelCosts/js/custom.js" ] },
+    { "version": "v2020.01.13", "files": [
+        "/TravelCosts/index.html",
+        "/TravelCosts/js/appCore.js",
+        "/TravelCosts/js/appStores.js",
+        "/TravelCosts/js/custom.js",
+        "/TravelCosts/js/extensions.js",
+        "/TravelCosts/js/reports.js",
+        "/TravelCosts/css/dark.css"
+      ]
+    }
   ]
 }
