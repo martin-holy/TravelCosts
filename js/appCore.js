@@ -1,18 +1,16 @@
 const app = {
-  run: function() {
-    return this.DB.open().then(async (isUpgradeNeeded) => {
-      if (isUpgradeNeeded) await this.DB.init();
+  run: async function () {
+    try {
+      if (await this.DB.open())
+        await this.DB.init();
 
-      // now only for editing default values on select in ADM_AppStores
-      this.DB.dbSchema = await appStores.ADM_AppStores.data();
-
+      this.DB.dbSchema = await appStores.ADM_AppStores.data(); // now only for editing default values on select in ADM_AppStores
       await this.DB.updateSchema();
-
       this.UI.init();
-      this.UI.cursor.init();
-
       await this.createAppMap();
-    }).catch(err => app.log(err, true));
+    } catch (e) {
+      app.log(e, true);
+    }
   },
 
   log: function(msg, withAlert = false) {
@@ -20,37 +18,40 @@ const app = {
     if (withAlert) alert(msg);
   },
 
-  createAppMap: async function() {
-    const stores = await appStores.ADM_AppStores.data({ sorted: true }),
-          storeGroups = await appStores.ADM_AppStoreGroups.data({ sorted: true }),
-          groups = [];
+  createAppMap: async function () {
+    const appMapDiv = document.getElementById('appMap').querySelector('div');
 
-    for (const group of storeGroups) {
-      const ul = [];
+    if (appMapDiv.innerHTML === '') {
+      const stores = await appStores.ADM_AppStores.data({ sorted: true }),
+        storeGroups = await appStores.ADM_AppStoreGroups.data({ sorted: true }),
+        groups = [];
 
-      for (const storeId of group.stores) {
-        const store = stores.find(s => s.id === storeId);
-        ul.push(`<li onclick="app.form.load(\'${store.name}\');">${store.title}</li>`);
-      }
+      for (const group of storeGroups) {
+        const ul = [];
 
-      groups.push(`
+        for (const storeId of group.stores) {
+          const store = stores.find(s => s.id === storeId);
+          ul.push(`<li onclick="app.form.load(\'${store.name}\');">${store.title}</li>`);
+        }
+
+        groups.push(`
         <table>
           <tr><td colspan="2"><h2>${group.name}</h2></td></tr>
           <tr><td class="groupIcon"><img src="img/${group.icon}.png" /></td><td><ul>${ul.join('')}</ul></td></tr>
         </table>`);
+      }
+
+      appMapDiv.innerHTML = groups.join('');
     }
 
     const divVersion = document.getElementById('version');
     divVersion.innerHTML = localStorage.getItem('appVersion');
     divVersion.style.display = 'block';
 
-    app.UI.contentTabs.clear();
     app.UI.setTitle('Travel Costs');
     app.UI.toolBar.clear();
     app.UI.cursor.hide();
     app.UI.footer.hide();
-
-    document.getElementById('appMap').innerHTML = `<img id="appMapBG" src="img/background.jpg" />${groups.join('')}`;
     app.UI.elmMenu.innerHTML = '<li onclick="testFunc();">Test Func</li>';
     app.UI.contentTabs.active('appMap');
     app.UI.elmData.scrollTop = 0;
@@ -69,6 +70,19 @@ const app = {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     }, 0);
+  },
+
+  fetchData: function(url) {
+    return new Promise((resolve, reject) => {
+      fetch(url).then(res => {
+        if (res.ok && res.status === 200 && res.type === 'basic')
+          resolve(res);
+        else
+          throw new Error('Response was not ok');
+      }).catch(err => {
+        reject(err);
+      });
+    });
   },
 
   DB: {
@@ -108,73 +122,64 @@ const app = {
       });
     },
 
-    init: function() {
+    init: async function() {
       const stores = [];
       for (const s of Object.values(appStores))
         stores.push(s.dbSchema);
 
-      return Promise.all([
-        appStores.ADM_AppStores.insert(stores),
-        appStores.ADM_AppStoreGroups.insert([
-          { id: 1, name: 'Administration', icon: 'adm', index: 4, stores: [1, 2] },
-          { id: 2, name: 'Travel Costs & Incomes', icon: 'money', index: 1, stores: [20, 21, 22, 23, 24, 26] },
-          { id: 3, name: 'Car', icon: 'car', index: 2, stores: [30, 31, 32, 33, 34, 35] },
-          { id: 4, name: 'Global', icon: 'global', index: 3, stores: [10, 11, 12, 13] }
-        ]),
-        appStores.ADM_AppSettings.insert([{ id: 1, dbVersion: this.dbVersion }])
+      await appStores.ADM_AppStores.insert(stores);
+      await appStores.ADM_AppStoreGroups.insert([
+        { id: 1, name: 'Administration', icon: 'adm', index: 4, stores: [1, 2] },
+        { id: 2, name: 'Travel Costs & Incomes', icon: 'money', index: 1, stores: [20, 21, 22, 23, 24, 26] },
+        { id: 3, name: 'Car', icon: 'car', index: 2, stores: [30, 31, 32, 33, 34, 35] },
+        { id: 4, name: 'Global', icon: 'global', index: 3, stores: [10, 11, 12, 13] }
       ]);
+      await appStores.ADM_AppSettings.insert([{ id: 1, dbVersion: this.dbVersion }]);
     },
 
-    updateSchema: function() {
-      return new Promise(async (resolve) => {
-        const settings = await appStores.ADM_AppSettings.getRecordById(1);
+    updateSchema: async function() {
+      const settings = await appStores.ADM_AppSettings.getRecordById(1);
 
-        if (settings.dbVersion === this.dbVersion) {
-          resolve();
-          return;
-        }
+      if (settings.dbVersion === this.dbVersion) return;
 
-        if (settings.dbVersion < 5) {
-          const g = await appStores.ADM_AppStoreGroups.getRecordById(2);
-          g.stores = [20, 21, 22, 23, 24, 26];
-          await appStores.ADM_AppStoreGroups.update([g]);
-        }
+      if (settings.dbVersion < 5) {
+        const g = await appStores.ADM_AppStoreGroups.getRecordById(2);
+        g.stores = [20, 21, 22, 23, 24, 26];
+        await appStores.ADM_AppStoreGroups.update([g]);
+      }
 
-        if (settings.dbVersion < 12) {
-          // ADM_AppStores
-          const admAppStores = await appStores.ADM_AppStores.getRecordById(1);
-          admAppStores.functions = [
-            { name: 'app.DB.import', title: 'Import data' },
-            { name: 'app.DB.export', title: 'Export data' }
-          ];
+      if (settings.dbVersion < 12) {
+        // ADM_AppStores
+        const admAppStores = await appStores.ADM_AppStores.getRecordById(1);
+        admAppStores.functions = [
+          { name: 'app.DB.import', title: 'Import data' },
+          { name: 'app.DB.export', title: 'Export data' }
+        ];
 
-          // CAR_Drives
-          const carDrives = await appStores.ADM_AppStores.getRecordById(30);
-          carDrives.functions = [
-            { name: 'reports.carDrives.run', title: 'Report Km/Days/Places' },
-            { name: 'reports.carDrives2.run', title: 'Report Km/EUR' }
-          ];
+        // CAR_Drives
+        const carDrives = await appStores.ADM_AppStores.getRecordById(30);
+        carDrives.functions = [
+          { name: 'reports.carDrives.run', title: 'Report Km/Days/Places' },
+          { name: 'reports.carDrives2.run', title: 'Report Km/EUR' }
+        ];
 
-          // CAR_Refueling
-          const carRefueling = await appStores.ADM_AppStores.getRecordById(31);
-          carRefueling.functions = [
-            { name: 'reports.carRefueling.run', title: 'Report' }
-          ];
+        // CAR_Refueling
+        const carRefueling = await appStores.ADM_AppStores.getRecordById(31);
+        carRefueling.functions = [
+          { name: 'reports.carRefueling.run', title: 'Report' }
+        ];
 
-          // MON_Costs
-          const monCosts = await appStores.ADM_AppStores.getRecordById(20);
-          monCosts.functions = [
-            { name: 'reports.monCosts.run', title: 'Report' }
-          ];
+        // MON_Costs
+        const monCosts = await appStores.ADM_AppStores.getRecordById(20);
+        monCosts.functions = [
+          { name: 'reports.monCosts.run', title: 'Report' }
+        ];
 
-          await appStores.ADM_AppStores.update([admAppStores, carDrives, carRefueling, monCosts]);
-        }
+        await appStores.ADM_AppStores.update([admAppStores, carDrives, carRefueling, monCosts]);
+      }
 
-        settings.dbVersion = this.dbVersion;
-        await appStores.ADM_AppSettings.update([settings]);
-
-        resolve();
-      });
+      settings.dbVersion = this.dbVersion;
+      await appStores.ADM_AppSettings.update([settings]);
     },
 
     export: async function() {
@@ -239,15 +244,12 @@ const app = {
       }).then(() => location.reload(false));
     },
 
-    linkStores: function(store) {
-      return new Promise(async (resolve) => {
-        for (const p of store.properties) {
-          if (!p.source) continue;
-          p.source.store = appStores[p.source.name];
-          await p.source.store.data({ sorted: true });
-        }
-        resolve();
-      });
+    linkStores: async function(store) {
+      for (const p of store.properties) {
+        if (!p.source) continue;
+        p.source.store = appStores[p.source.name];
+        await p.source.store.data({ sorted: true });
+      }
     }
   },
 
@@ -269,10 +271,19 @@ const app = {
       this.elmGrid = document.getElementById('grid');
       this.elmEdit = document.getElementById('edit');
 
+      this.cursor.init();
+
       this.elmData.addEventListener('scroll', (e) => {
-        const gridFixed = document.querySelector('.grid-fixed');
-        if (gridFixed)
-          gridFixed.style.left = `-${e.target.scrollLeft}px`;
+        if (app.UI.contentTabs.isActive('grid')) {
+          const gridFixed = app.UI.elmGrid.querySelector('.grid-fixed');
+          if (gridFixed)
+            gridFixed.style.left = `-${e.target.scrollLeft}px`;
+          app.form.grid.appendRows();
+        }
+      }, false);
+
+      this.elmEdit.querySelector('form').addEventListener('submit', (e) => {
+        e.preventDefault();
       }, false);
     },
 
@@ -409,16 +420,18 @@ const app = {
     },
 
     contentTabs: {
-      clear: function() {
-        for (const x of app.UI.elmData.children)
-          x.innerHTML = '';
-      },
+      activeTabId: '',
 
       active: function(name) {
         for (const x of app.UI.elmData.children)
           x.style.display = 'none';
 
         document.getElementById(name).style.display = 'block';
+        this.activeTabId = name;
+      },
+
+      isActive: function(name) {
+        return name === this.activeTabId;
       }
     }
   },
@@ -430,7 +443,6 @@ const app = {
       this.current = appStores[frm];
 
       document.getElementById('version').style.display = 'none';
-      app.UI.contentTabs.clear();
       app.UI.contentTabs.active('grid');
       app.UI.setTitle(this.current.dbSchema.title);
       app.UI.footer.hide();
@@ -441,44 +453,83 @@ const app = {
       app.UI.toolBar.appendHtml('<div class="toolBarIcon" onclick="app.form.record.new();">✹</div>');
 
       this.current.data({ sorted: true }).then((gridItems) => {
-        this.createGrid(this.current.dbSchema, gridItems, true);
+        this.grid.create(this.current.dbSchema, gridItems, true);
         this.edit.create();
       });
     },
 
-    createGrid: function(form, gridItems, editable) {
-      // THEAD
-      let thead = [],
-          theadDivs = [];
-      for (const prop of form.properties) {
-        if (prop.hidden || prop.type === 'array') continue;
-        thead.push(`<th>${prop.title}</th>`);
-        theadDivs.push(`<div>${prop.title}</div>`);
-      }
+    grid: {
+      sourceThead: null,
+      fixedThead: null,
+      tbody: null,
+      form: null,
+      gridItems: [],
+      rowsCount: 0,
+      isEditable: false,
 
-      // TBODY
-      let tbody = [];
-      for (const item of gridItems) {
-        let tds = [];
+      create: function(form, gridItems, editable) {
+        this.sourceThead = app.UI.elmGrid.querySelector('.grid-source');
+        this.fixedThead = app.UI.elmGrid.querySelector('.grid-fixed');
+        this.tbody = app.UI.elmGrid.querySelector('tbody');
+        this.form = form;
+        this.gridItems = gridItems;
+        this.rowsCount = 0;
+        this.isEditable = editable;
 
+        // THEAD
+        const thead = [],
+              theadDivs = [];
         for (const prop of form.properties) {
+          if (prop.hidden || prop.type === 'array') continue;
+          thead.push(`<th>${prop.title}</th>`);
+          theadDivs.push(`<div>${prop.title}</div>`);
+        }
+
+        this.sourceThead.innerHTML = `<tr>${thead.join('')}</tr>`;
+        this.fixedThead.innerHTML = theadDivs.join('');
+        this.tbody.innerHTML = '';
+        this.appendRows();
+      },
+
+      setFixedThead: function() {
+        const widths = [];
+
+        this.sourceThead.querySelectorAll('th').forEach(elm => {
+          widths.push(getComputedStyle(elm, null).width);
+        });
+        this.fixedThead.querySelectorAll('div').forEach((elm, i) => elm.style.width = widths[i]);
+        this.fixedThead.style.width = getComputedStyle(app.UI.elmGrid.querySelector('.grid'), null).width;
+      },
+
+      appendRows: function () {
+        const itemsCount = this.gridItems.length;
+
+        while (app.UI.elmGrid.clientHeight - app.UI.elmData.clientHeight - app.UI.elmData.scrollTop < 200 && this.rowsCount < itemsCount) {
+          this.tbody.appendChild(this.createRow(this.gridItems[this.rowsCount]));
+          this.rowsCount++;
+        }
+
+        this.setFixedThead();
+      },
+
+      createRow: function(item) {
+        const tds = [];
+
+        for (const prop of this.form.properties) {
           if (prop.hidden) continue;
 
           let style = prop.align ? `text-align:${prop.align};` : '',
-              val;
+              val = '';
 
           switch (prop.type) {
             case 'array': continue;
             case 'multiSelect': {
-              let tmp = [];
-              for (const id of item[prop.name])
-                tmp.push(prop.source.store.cache.find(d => d.id === id)[prop.source.property]);
-              val = tmp.join(', ');
+              val = item[prop.name].map(id => (prop.source.store.cache.find(d => d.id === id)[prop.source.property])).join(', ');
               break;
             }
             case 'select': {
-              let srcItem = prop.source.store.cache.find(d => d.id === item[prop.name]);
-              if (srcItem !== undefined) {
+              const srcItem = prop.source.store.cache.find(d => d.id === item[prop.name]);
+              if (srcItem) {
                 style += srcItem.bgColor ? `background-color:${srcItem.bgColor};` : '';
                 val = srcItem[prop.source.property];
               }
@@ -491,80 +542,84 @@ const app = {
               val = item[prop.name];
           }
 
-          if (val === undefined || val === null) val = '';
+          if (!val) val = '';
 
           if (prop.name === 'bgColor')
             style += val === '' ? '' : `background-color:${val};`;
 
           tds.push(`<td${style !== '' ? ` style="${style}"` : ''}>${val}</td>`);
         }
-        tbody.push(`<tr${editable ? ` onclick="app.form.record.edit(${item.id});"` : ''}>${tds.join('')}</tr>`);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = tds.join('');
+        if (this.isEditable)
+          tr.addEventListener('click', () => app.form.record.edit(item.id));
+
+        return tr;
+      },
+
+      insertRow: function (index, item) {
+        if (index < this.rowsCount || index === 0) {
+          this.tbody.insertBefore(this.createRow(item), this.tbody.children[index]);
+          this.rowsCount++;
+        }
+      },
+
+      updateRow: function (oldIndex, newIndex, item) {
+        this.deleteRow(oldIndex);
+        this.insertRow(newIndex, item);
+      },
+
+      deleteRow: function (index) {
+        const row = this.tbody.children[index];
+        if (row) {
+          this.tbody.removeChild(row);
+          this.rowsCount--;
+        }
       }
-
-      app.UI.elmGrid.innerHTML = `
-        <div class="grid-fixed">
-          ${theadDivs.join('')}
-        </div>
-        <table class="grid">
-          <thead class="grid-source"><tr>${thead.join('')}</tr></thead>
-          <tbody>${tbody.join('')}</tbody>
-        </table>`;
-
-      // set fixed thead
-      let sourceThead = app.UI.elmGrid.querySelector('.grid-source'),
-          fixedThead = app.UI.elmGrid.querySelector('.grid-fixed'),
-          widths = [];
-
-      sourceThead.querySelectorAll('th').forEach(elm => {
-        widths.push(getComputedStyle(elm, null).width);
-      });
-      fixedThead.querySelectorAll('div').forEach((elm, i) => elm.style.width = widths[i]);
-      fixedThead.style.width = getComputedStyle(app.UI.elmGrid.querySelector('.grid'), null).width;
     },
 
     edit: {
       create: function() {
-        const tbody = [];
+        const tbody = [],
+              form = app.UI.elmEdit.querySelector('form'),
+              table = form.querySelector('table');
 
         for (const prop of app.form.current.dbSchema.properties) {
           if (prop.hidden) continue;
           switch (prop.type) {
-          case 'calc':
-          case 'readOnly':
-          case 'button': continue;
-          case 'properties':
-            tbody.push(`<tr><td colspan="2">${prop.title} Defaults:</td></tr>`);
-            tbody.push(`<tr><td colspan="2"><table id="__table_${prop.name}"></table></td></tr>`);
-            break;
-          default:
-            tbody.push(`<tr><td>${prop.title}:</td><td>${this.getInput(prop)}</td></tr>`);
-            break;
-          }
+            case 'calc':
+            case 'readOnly':
+            case 'button': continue;
+            case 'properties':
+              tbody.push(`<tr><td colspan="2">${prop.title} Defaults:</td></tr>`);
+              tbody.push(`<tr><td colspan="2"><table id="__table_${prop.name}"></table></td></tr>`);
+              break;
+            default:
+              tbody.push(`<tr><td>${prop.title}:</td><td>${this.getInput(prop)}</td></tr>`);
+              break;
+            }
         }
 
-        app.UI.elmEdit.innerHTML = `
-          <table>${tbody.join('')}</table>
-          <div>
-            <button onclick="app.form.record.delete(); return false;" id="btnDelete">Delete</button>
-            <button onclick="app.form.edit.cancel(); return false;">Cancel</button>
-            <button onclick="app.form.record.save(); return false;">Save</button>
-          </div>`;
+        form.id = `form_${app.form.current.dbSchema.name}`;
+        table.innerHTML = tbody.join('');
       },
 
       getInput: function(prop) {
         const required = prop.required ? 'required' : '',
-              readonly = prop.readonly ? 'readonly' : '';
+              readonly = prop.readonly ? 'readonly' : '',
+              elmId = `form_${app.form.current.dbSchema.name}_${prop.name}`;
 
         switch (prop.type) {
-          case 'int': return `<input type="number" id="__${prop.name}" ${readonly} ${required}>`;
-          case 'num': return `<input type="text" id="__${prop.name}" ${readonly} ${required} pattern="^[0-9]+(\.[0-9]+)?$">`;
-          case 'date': return `<input type="date" id="__${prop.name}" ${readonly} ${required}>`;
-          case 'text': return `<input type="text" id="__${prop.name}" ${readonly} ${required}>`;
-          case 'textarea': return `<textarea id="__${prop.name}" ${readonly} ${required}></textarea>`;
-          case 'bool': return `<input type="checkbox" id="__${prop.name}" ${readonly}>`;
+          case 'int': return `<input type="number" id="${elmId}" ${readonly} ${required}>`;
+          case 'num': return `<input type="number" id="${elmId}" ${readonly} ${required} step="0.001" min="0">`;
+          case 'date': return `<input type="date" id="${elmId}" ${readonly} ${required}>`;
+          case 'text': return `<input type="text" id="${elmId}" ${readonly} ${required} autocomplete="on">`;
+          case 'textarea': return `<textarea id="${elmId}" ${readonly} ${required}></textarea>`;
+          case 'bool': return `<input type="checkbox" id="${elmId}" ${readonly}>`;
           case 'select':
           case 'multiSelect': {
-            const select = xSelect(`__${prop.name}`),
+            const select = xSelect(elmId),
                   data = [];
 
             for (const x of prop.source.store.cache)
@@ -606,6 +661,8 @@ const app = {
 
         for (const prop of app.form.current.dbSchema.properties) {
           if (prop.hidden) continue;
+
+          const elmId = `form_${app.form.current.dbSchema.name}_${prop.name}`;
           if (isNew) { // preset default
             switch (prop.type) {
               case 'calc':
@@ -613,10 +670,10 @@ const app = {
               case 'button':
               case 'properties':
               case 'variable': continue;
-              case 'date': document.getElementById(`__${prop.name}`).value = new Date().toYMD(); break;
-              case 'select': if (prop.default) xSelect(`__${prop.name}`).set(prop.default); break;
-              case 'multiSelect': if (prop.default) xSelect(`__${prop.name}`).set(prop.default); break;
-              default: document.getElementById(`__${prop.name}`).value = '';
+              case 'date': document.getElementById(elmId).value = new Date().toYMD(); break;
+              case 'select': if (prop.default) xSelect(elmId).set(prop.default); break;
+              case 'multiSelect': if (prop.default) xSelect(elmId).set(prop.default); break;
+              default: document.getElementById(elmId).value = '';
             }
           } else {
             let rec = this.current;
@@ -624,9 +681,9 @@ const app = {
               case 'calc':
               case 'readOnly':
               case 'button': continue;
-              case 'bool': document.getElementById(`__${prop.name}`).toggleAttribute('checked', rec[prop.name]); break;
-              case 'select': xSelect(`__${prop.name}`).set([rec[prop.name]]); break;
-              case 'multiSelect': xSelect(`__${prop.name}`).set(rec[prop.name]); break;
+              case 'bool': document.getElementById(elmId).toggleAttribute('checked', rec[prop.name]); break;
+              case 'select': xSelect(elmId).set([rec[prop.name]]); break;
+              case 'multiSelect': xSelect(elmId).set(rec[prop.name]); break;
               case 'properties': {
                 await app.DB.linkStores(rec);
                 let table = document.getElementById(`__table_${prop.name}`),
@@ -638,11 +695,11 @@ const app = {
                 table.innerHTML = trs.join('');
                 for (const x of props) {
                   if (!x.default) continue;
-                  xSelect(`__${x.name}`).set(x.default);
+                  xSelect(`form_${app.form.current.dbSchema.name}_${x.name}`).set(x.default);
                 }
                 break;
               }
-              default: document.getElementById(`__${prop.name}`).value = rec[prop.name] || ''; break;
+              default: document.getElementById(elmId).value = rec[prop.name] || ''; break;
             }
           }
         }
@@ -653,11 +710,13 @@ const app = {
       save: async function() {
         if (app.UI.elmEdit.querySelectorAll(':invalid').length > 0) return;
         //TODO check for required multiSelect
-        const rec = this.current;
+        const rec = this.current,
+              isNew = !rec.id;
 
         for (const prop of app.form.current.dbSchema.properties) {
           if (prop.hidden) continue;
-          const elm = app.UI.elmEdit.querySelector(`#__${prop.name}`);
+          const elmId = `form_${app.form.current.dbSchema.name}_${prop.name}`,
+                elm = app.UI.elmEdit.querySelector(`#${elmId}`);
           switch (prop.type) {
             case 'calc':
             case 'readOnly':
@@ -665,12 +724,12 @@ const app = {
             case 'bool': rec[prop.name] = elm.checked; break;
             case 'int':
             case 'num': rec[prop.name] = elm.value === '' ? null : Number(elm.value); break;
-            case 'select': rec[prop.name] = xSelect(`__${prop.name}`).get()[0]; break;
-            case 'multiSelect': rec[prop.name] = xSelect(`__${prop.name}`).get(); break;
+            case 'select': rec[prop.name] = xSelect(elmId).get()[0]; break;
+            case 'multiSelect': rec[prop.name] = xSelect(elmId).get(); break;
             case 'properties':
               for (const x of rec[prop.name]) {
                 if (!x.source) continue;
-                x.default = xSelect(`__${x.name}`).get();
+                x.default = xSelect(`form_${app.form.current.dbSchema.name}_${x.name}`).get();
               }
               break;
             default: rec[prop.name] = elm.value === '' ? null : elm.value;
@@ -682,15 +741,20 @@ const app = {
           rec[prop.name] = await window[prop.funcName](rec);
         }
 
-        await app.form.current.iudStoreData(rec.id ? 'update' : 'insert', [rec]);
+        await app.form.current.iudStoreData(isNew ? 'insert' : 'update', [rec]);
         app.form.edit.hide();
 
         if (app.form.current.dbSchema.onSaveFunc)
           await window[app.form.current.dbSchema.onSaveFunc]();
 
-        app.form.current.data({ sorted: true }).then((gridItems) => {
-          app.form.createGrid(app.form.current.dbSchema, gridItems, true);
-        });
+        const oldIndex = isNew ? null : app.form.current.cache.indexOf(rec);
+        await app.form.current.data({ sorted: true });
+        const newIndex = app.form.current.cache.indexOf(rec);
+
+        if (isNew)
+          app.form.grid.insertRow(newIndex, rec);
+        else
+          app.form.grid.updateRow(oldIndex, newIndex, rec);
       },
 
       delete: async function() {
@@ -716,9 +780,7 @@ const app = {
           app.form.edit.hide();
           const itemIndex = app.form.current.cache.indexOf(this.current);
           app.form.current.cache.splice(itemIndex, 1);
-          app.form.current.data({ sorted: true }).then((gridItems) => {
-            app.form.createGrid(app.form.current.dbSchema, gridItems, true);
-          });
+          app.form.grid.deleteRow(itemIndex);
         }
       }
     }
@@ -776,7 +838,8 @@ const app = {
 
 window.addEventListener('load', async () => {
   // my way to update cache (:P)
-  await updateAppCache('TravelCosts');
+  if (await updateAppCache('TravelCosts'))
+    window.location.reload(true);
 
   navigator.serviceWorker
     .register('/TravelCosts/sw_cached_files.js')
@@ -785,60 +848,41 @@ window.addEventListener('load', async () => {
 
   await app.run();
 
-  // demo reports
-  const params = new URLSearchParams(window.location.search);
-  switch (params.get('demoReport')) {
-    case 'reportMonCosts': {
-      app.UI.elmMenu.innerHTML = '<li onclick="app.createAppMap();">Home</li>';
-      reports.monCosts.run(true);
-      break;
-    }
-    case 'reportCarDrives2': {
-      app.UI.elmMenu.innerHTML = '<li onclick="app.createAppMap();">Home</li>';
-      reports.carDrives2.run(true);
-      break;
-    }
-  }
+  // run demo report if search param is demoReport
+  reports.runDemo();
 });
 
-var updateAppCache = function (appName) {
-  // get json with updates
-  return fetch('/TravelCosts/updates.json')
-    .then((response) => {
-      if (response.ok)
-        return response.json();
-      throw new Error('Network response was not ok when getting updates.');
-    }).then(json => {
-      let ver = localStorage.getItem('appVersion');
+var updateAppCache = async function (appName) {
+  return app.fetchData('/TravelCosts/updates.json').then(async (res) => {
+    const json = await res.json();
+    let ver = localStorage.getItem('appVersion');
 
-      // collect files for update
-      const files = new Set();
-      for (const u of json.updates)
-        if (ver == null || u.version > ver) {
-          ver = u.version;
-          for (const f of u.files)
-            files.add(f);
-        }
+    // collect files for update
+    const files = new Set();
+    for (const u of json.updates)
+      if (ver == null || u.version > ver) {
+        ver = u.version;
+        for (const f of u.files)
+          files.add(f);
+      }
 
-      if (files.size === 0) return null;
+    // nothing to update
+    if (files.size === 0) return false;
 
-      localStorage.setItem('appVersion', ver);
+    console.log('Update: Caching Files');
+    const cache = await caches.open(appName);
 
-      // update files in cache
-      return caches.open(appName).then(cache => {
-        console.log('Update: Caching Files');
+    for (const key of files.keys()) {
+      await cache.delete(key);
+      await cache.add(key);
+    }
 
-        //return cache.addAll(files); // <= this doesn't work
+    // await cache.addAll(files); // <= this doesn't work
 
-        const x = [];
-        for (const key of files.keys())
-          x.push(key);
-
-        return Promise.all(x.map(f => {
-          return cache.delete(f).then(cache.add(f));
-        }));
-      });
-    }).catch((error) => {
-      console.log(error.message);
-    });
+    localStorage.setItem('appVersion', ver);
+    return true;
+  }).catch(err => {
+    console.log('App Update:', err);
+    return false;
+  });
 };

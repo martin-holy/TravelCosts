@@ -8,6 +8,22 @@ var reports = {
     document.getElementById('report').innerHTML = `<div id="${rep.id}"></div>`;
   },
 
+  runDemo: function() {
+    const params = new URLSearchParams(window.location.search);
+    switch (params.get('demoReport')) {
+      case 'reportMonCosts': {
+        app.UI.elmMenu.innerHTML = '<li onclick="app.createAppMap();">Home</li>';
+        reports.monCosts.run(true);
+        break;
+      }
+      case 'reportCarDrives2': {
+        app.UI.elmMenu.innerHTML = '<li onclick="app.createAppMap();">Home</li>';
+        reports.carDrives2.run(true);
+        break;
+      }
+    }
+  },
+
   // returns min a max date from data containing dateFrom and dateTo
   getMinMaxDatesFromRange: function (data) {
     let min = '', max = '';
@@ -263,7 +279,7 @@ reports.carDrives2 = {
   groupBy: 1,
 
   run: async function(demo = false) {
-    if (!document.getElementById(this.id)) {
+    if (!document.getElementById(this.id) || !app.UI.contentTabs.isActive('report')) {
       if (demo) {
         if (!(await this.getDataFromJson())) {
           app.createAppMap();
@@ -354,18 +370,16 @@ reports.carDrives2 = {
   },
 
   getDataFromJson: async function () {
-    const response = await fetch('/TravelCosts/reportCarDrives2.json');
+    return app.fetchData('/TravelCosts/reportCarDrives2.json').then(async (res) => {
+      const json = await res.json();
+      document.getElementById('version').innerHTML = json.date;
+      this.data = json.data;
 
-    if (!response.ok) {
-      app.log('Network response was not ok when getting demo data.', true);
+      return true;
+    }).catch(err => {
+      app.log(`Error when getting demo data. ${err}`, true);
       return false;
-    }
-
-    const json = await response.json();
-    document.getElementById('version').innerHTML = json.date;
-    this.data = json.data;
-
-    return true;
+    });
   },
 
   getDataFromDb: async function () {
@@ -489,7 +503,7 @@ reports.monCosts = {
   groupBy: 1,
 
   run: async function(demo = false) {
-    if (!document.getElementById(reports.monCosts.id)) {
+    if (!document.getElementById(this.id) || !app.UI.contentTabs.isActive('report')) {
       if (demo) {
         if (!(await this.getDataFromJson())) {
           app.createAppMap();
@@ -583,7 +597,7 @@ reports.monCosts = {
       if (type.sum === 0) continue;
 
       const items = [];
-      for (const item of type.data.orderBy('date', false)) {
+      for (const item of type.data.orderBy('date')) {
         const desc = item.desc ? `<span>${item.desc}</span>` : '';
         items.push(`
           <li class="greyBox spanRow">
@@ -611,19 +625,17 @@ reports.monCosts = {
   },
 
   getDataFromJson: async function () {
-    const response = await fetch('/TravelCosts/reportMonCosts.json');
+    return app.fetchData('/TravelCosts/reportMonCosts.json').then(async (res) => {
+      const json = await res.json();
+      document.getElementById('version').innerHTML = json.date;
+      this.costsTypes = json.costsTypes;
+      this.data = json.data;
 
-    if (!response.ok) {
-      app.log('Network response was not ok when getting demo data.', true);
+      return true;
+    }).catch(err => {
+      app.log(`Error when getting demo data. ${err}`, true);
       return false;
-    }
-
-    const json = await response.json();
-    document.getElementById('version').innerHTML = json.date;
-    this.costsTypes = json.costsTypes;
-    this.data = json.data;
-
-    return true;
+    });
   },
 
   getDataFromDb: async function() {

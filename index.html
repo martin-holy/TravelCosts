@@ -27,10 +27,40 @@
 
     <!-- Main Content -->
     <div id="mainContent">
-      <div id="grid"></div>
-      <div id="edit"></div>
+      <!-- Updates -->
+      <div id="updates">
+        <h2>Checking for updates ...</h2>
+      </div>
+
+      <!-- App Map -->
+      <div id="appMap">
+        <img src="img/background.jpg" alt="" />
+        <div></div>
+      </div>
+
+      <!-- Grid -->
+      <div id="grid">
+        <div class="grid-fixed"></div>
+        <table class="grid">
+          <thead class="grid-source"></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Edit -->
+      <div id="edit">
+        <form>
+          <table></table>
+          <div>
+            <button onclick="app.form.record.delete();" type="button" id="btnDelete">Delete</button>
+            <button onclick="app.form.edit.cancel();" type="button">Cancel</button>
+            <button onclick="app.form.record.save();" type="submit">Save</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Report -->
       <div id="report"></div>
-      <div id="appMap"></div>
     </div>
 
     <!-- Info Cursor -->

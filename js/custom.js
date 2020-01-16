@@ -60,7 +60,7 @@ carCalcConsumptions = async () => {
   await appStores.CAR_Refueling.update(refueling);
   await carUpdateDieselPricePerKm();
   appStores.CAR_Refueling.data({sorted: true}).then((gridItems) => {
-    app.form.createGrid(appStores.CAR_Refueling.dbSchema, gridItems, true);
+    app.form.grid.create(appStores.CAR_Refueling.dbSchema, gridItems, true);
   });
 };
 
@@ -396,7 +396,7 @@ monDebtsCalc = async () => {
     { name: 'debtorId', title: 'Debtor', type: 'select', source: { name: 'GLO_People', property: 'name' }},
     { name: 'eurCalc', title: 'EUR', align: 'right' }]};
   await app.DB.linkStores(form);
-  app.form.createGrid(form, pairs, false);
+  app.form.grid.create(form, pairs, false);
 };
 
 monUpdateRates = () => {
@@ -415,7 +415,7 @@ monUpdateRates = () => {
       }
 
       appStores.MON_Currencies.update(currencies);
-      app.form.createGrid(appStores.MON_Currencies.dbSchema, currencies, true);
+      app.form.grid.create(appStores.MON_Currencies.dbSchema, currencies, true);
     }).catch((error) => {
       app.log(error.message, true);
     });

@@ -42,23 +42,20 @@ self.addEventListener('activate', () => {
 // Fetch Event
 self.addEventListener('fetch', e => {
   // Respond with Cache falling back to Network
-  e.respondWith(
-    caches.open(appName).then(cache => {
-      return cache.match(e.request).then(res => {
-        if (res) return res;
+  e.respondWith(async function() {
+    try {
+      const cache = await caches.open(appName),
+            res = await cache.match(e.request);
+      if (res) return res;
 
-        return fetch(e.request).then(netRes => {
-          if (netRes.ok && netRes.status === 200 && netRes.type === 'basic')
-            if (cacheables.some(x => e.request.url.endsWith(x)))
-              cache.put(e.request, netRes.clone());
-
-          return netRes;
-        });
-      }).catch(error => {
-        console.log('Error in fetch handler:', error);
-
-        throw error;
-      });
-    })
-  );
+      const netRes = await fetch(e.request);
+      if (netRes.ok && netRes.status === 200 && netRes.type === 'basic')
+        if (cacheables.some(x => e.request.url.endsWith(x)))
+          cache.put(e.request, netRes.clone());
+      return netRes;
+    } catch (err) {
+      console.log('Error in fetch handler:', err);
+      throw err;
+    }
+  }());
 });
