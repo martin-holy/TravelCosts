@@ -55,6 +55,12 @@
         "/TravelCosts/js/reports.js",
         "/TravelCosts/css/dark.css"
       ]
+    },
+    {
+      "version": "v2020.01.16.1",
+      "files": [
+        "/TravelCosts/js/appCore.js"
+      ]
     }
   ]
 }

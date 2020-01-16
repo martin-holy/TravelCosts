@@ -502,9 +502,11 @@ const app = {
       },
 
       appendRows: function () {
-        const itemsCount = this.gridItems.length;
+        const itemsCount = this.gridItems.length,
+              d = app.UI.elmData;
 
-        while (app.UI.elmGrid.clientHeight - app.UI.elmData.clientHeight - app.UI.elmData.scrollTop < 200 && this.rowsCount < itemsCount) {
+        // while bottom overflow < grid container && grid rows count < data items count
+        while (app.UI.elmGrid.clientHeight - d.clientHeight - d.scrollTop < d.clientHeight && this.rowsCount < itemsCount) {
           this.tbody.appendChild(this.createRow(this.gridItems[this.rowsCount]));
           this.rowsCount++;
         }
