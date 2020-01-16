@@ -316,14 +316,11 @@ const app = {
     },
 
     cursor: {
-      cursorHeight: 0,
       isVisible: false,
       canDrag: false,
       limitTop: 0,
 
       init: function () {
-        this.show(-100);
-        this.cursorHeight = app.UI.elmCursor.clientHeight;
         this.hide();
 
         app.UI.elmCursor.addEventListener('mousedown', () => this.dragStart());
@@ -338,6 +335,7 @@ const app = {
       },
 
       show: function (limitTop) {
+        limitTop -= 20;
         app.UI.elmCursor.style.top = limitTop + 'px';
         app.UI.elmCursor.style.display = 'block';
         this.limitTop = limitTop;
@@ -361,8 +359,8 @@ const app = {
         if (!this.canDrag) return;
 
         const pageY = e.pageY ? e.pageY : e.touches[0].pageY,
-              limitBottom = app.UI.elmData.clientHeight + this.cursorHeight;
-        let top = pageY - this.cursorHeight / 2;
+              limitBottom = app.UI.elmData.clientHeight;
+        let top = pageY - 30;
 
           // limit top/bottom position
         if (top < this.limitTop)
@@ -376,7 +374,7 @@ const app = {
 
       updateInfoBox: function() {
         if (!this.isVisible) return;
-        const offset = app.UI.elmData.scrollTop - this.limitTop + app.UI.elmCursor.offsetTop + (this.cursorHeight / 2),
+        const offset = app.UI.elmData.scrollTop - this.limitTop + app.UI.elmCursor.offsetTop + 10,
               infoData = this.getInfoData(offset);
 
         app.UI.elmFooter.innerHTML = infoData;

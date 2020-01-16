@@ -59,7 +59,8 @@
     {
       "version": "v2020.01.16.1",
       "files": [
-        "/TravelCosts/js/appCore.js"
+        "/TravelCosts/js/appCore.js",
+        "/TravelCosts/css/dark.css"
       ]
     }
   ]
