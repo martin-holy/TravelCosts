@@ -764,7 +764,7 @@ reports.gloCountriesStay = {
           dateFrom: x.dateFrom,
           dateTo: x.dateTo ? x.dateTo : new Date(Date.now()).toYMD(),
           name: country.name,
-          code: country.code.toLowerCase()
+          code: country.code
         };
 
       o.days = x.days ? x.days : numberOfDaysBetween(o);
