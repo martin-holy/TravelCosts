@@ -100,6 +100,12 @@
         "/TravelCosts/img/flags/TT.png",
         "/TravelCosts/img/flags/US.png"
       ]
+    },
+    {
+      "version": "v2020.01.31.1",
+      "files": [
+        "/TravelCosts/js/reports.js"
+      ]
     }
   ]
 }
