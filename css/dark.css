@@ -20,6 +20,8 @@ a {
 
 ul {
   list-style-type: none;
+  margin: 0;
+  padding: 0;
 }
 
 #header {
@@ -72,13 +74,12 @@ ul {
   overflow: auto;
   display: none;
   flex-shrink: 0;
-  height: 125px;
   border: 1px solid black;
   background-color: #24282A;
 }
 
 #cursor {
-  height: 60px;
+  height: 40px;
   position: absolute;
   left: 0;
   display: none;
@@ -120,6 +121,7 @@ ul {
   padding: 0;
   margin: 0;
   border: 1px solid black;
+  z-index: 1;
 }
 
 #menu li {
@@ -177,7 +179,6 @@ ul {
 }
 
 #appMap ul {
-  margin: 0;
   padding: 1px;
 }
 
@@ -336,17 +337,6 @@ input {
   padding-left: 4px;
 }
 
-.bubbleTd {
-  background-clip: padding-box;
-  border-radius: 5px;
-  background-color: rgba(0, 0, 0, 0.5);
-  border: 1px solid black;
-  color: #ffffff;
-  font-size: 16px;
-  text-align: center;
-  padding: 0 3px 0 3px;
-}
-
 .xSelect {
   font-size: 14px;
 }
@@ -418,6 +408,10 @@ input {
 }
 
 /*** SVG Reports ***/
+#report {
+  height: 100%;
+}
+
 #report svg text {
   font-size: 14px;
   fill: white;
@@ -481,9 +475,8 @@ input {
   display: flex;
 }
 
-#__rep_Costs_info > ul {
-  margin: 0;
-  padding: 0;
+#__rep_Costs_info {
+  height: 125px;
 }
 
 #__rep_Costs_info > ul > li {
@@ -517,8 +510,11 @@ input {
   stroke: black;
 }
 
+#__rep_Drives2_info {
+  height: 125px;
+}
+
 #__rep_Drives2_info ul {
-  margin: 0;
   padding: 2px;
 }
 
@@ -547,4 +543,77 @@ input {
 #__rep_Drives2_info div span:first-child {
   color: #ff8400;
   padding-left: 3px;
+}
+
+/* #__rep_gloCountriesStay */
+#__rep_gloCountriesStay {
+  display: flex;
+  height: 100%;
+}
+
+#__rep_gloCountriesStay > div {
+  overflow: auto;
+  flex: none;
+}
+
+#__rep_gloCountriesStay rect {
+  stroke: black;
+  fill: #007acc;
+}
+
+#__rep_gloCountriesStay text.driveName {
+  font-size: 12px;
+  text-anchor: start;
+}
+
+#__rep_gloCountriesStay text tspan {
+  fill: #70dc35;
+}
+
+#__rep_gloCountriesStay text.stayDays {
+  text-anchor: start;
+  fill: #70dc35;
+}
+
+#__rep_gloCountriesStay polyline, #__rep_gloCountriesStay line {
+  stroke: #007acc;
+  stroke-width: 2px;
+  fill: none;
+}
+
+#__rep_gloCountriesStay .cursorDate {
+  position: absolute;
+  top: 48px;
+  left: 22px;
+  width: 90px;
+  z-index: 1;
+  font-size: 14px;
+  border-top: 2px solid #70dc35;
+  padding-left: 16px;
+  color: #70dc35;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+#__rep_gloCountriesStay_info {
+  height: 65px;
+  display: flex;
+  font-size: 12px;
+  align-items: center;
+  text-shadow: 3px 3px 8px black;
+}
+
+#__rep_gloCountriesStay_info > div {
+  width: 55px;
+}
+
+#__rep_gloCountriesStay_info img {
+  margin-left: 2px;
+}
+
+#__rep_gloCountriesStay_info ul li:nth-child(even){
+  color: #14bcff;
+}
+
+#__rep_gloCountriesStay_info ul li span {
+  color: #70dc35;
 }

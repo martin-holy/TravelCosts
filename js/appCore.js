@@ -88,7 +88,7 @@ const app = {
   DB: {
     db: null,
     dbName: 'TravelCosts',
-    dbVersion: 12,
+    dbVersion: 13,
     dbSchema: [],
 
     open: function() {
@@ -113,7 +113,7 @@ const app = {
           isUpgradeNeeded = true;
           this.db = e.target.result;
           this.db.onerror = (e) => {
-            app.log(`Database OnUpgradeNeeded Error: ${e.target.errorCode}`, true);
+            app.log(`Database Error: ${e.target.errorCode}`, true);
           };
 
           for (const store of Object.keys(appStores))
@@ -176,6 +176,16 @@ const app = {
         ];
 
         await appStores.ADM_AppStores.update([admAppStores, carDrives, carRefueling, monCosts]);
+      }
+
+      if (settings.dbVersion < 13) {
+        // GLO_CountriesStay
+        const gloCountriesStay = await appStores.ADM_AppStores.getRecordById(11);
+        gloCountriesStay.functions = [
+          { name: 'reports.gloCountriesStay.run', title: 'Report' }
+        ];
+
+        await appStores.ADM_AppStores.update([gloCountriesStay]);
       }
 
       settings.dbVersion = this.dbVersion;
@@ -312,6 +322,11 @@ const app = {
 
       hide: function() {
         app.UI.elmFooter.style.display = 'none';
+      },
+
+      setContent: function(html) {
+        app.UI.elmFooter.innerHTML = html;
+        app.UI.elmFooter.scrollTop = 0;
       }
     },
 
@@ -328,14 +343,13 @@ const app = {
 
         document.addEventListener('mouseup', () => this.dragEnd());
         document.addEventListener('touchend', () => this.dragEnd());
-        document.addEventListener('mousemove', e => this.dragCursor(e));
-        document.addEventListener('touchmove', e => this.dragCursor(e));
+        document.addEventListener('mousemove', (e) => this.dragCursor(e));
+        document.addEventListener('touchmove', (e) => this.dragCursor(e));
 
-        app.UI.elmData.addEventListener('scroll', () => this.updateInfoBox());
+        app.UI.elmData.addEventListener('scroll', () => this.onChanged());
       },
 
       show: function (limitTop) {
-        limitTop -= 20;
         app.UI.elmCursor.style.top = limitTop + 'px';
         app.UI.elmCursor.style.display = 'block';
         this.limitTop = limitTop;
@@ -359,8 +373,8 @@ const app = {
         if (!this.canDrag) return;
 
         const pageY = e.pageY ? e.pageY : e.touches[0].pageY,
-              limitBottom = app.UI.elmData.clientHeight;
-        let top = pageY - 30;
+              limitBottom = app.UI.elmData.clientHeight + 20;
+        let top = pageY - 10;
 
           // limit top/bottom position
         if (top < this.limitTop)
@@ -369,16 +383,16 @@ const app = {
           top = limitBottom;
 
         app.UI.elmCursor.style.top = top + 'px';
-        this.updateInfoBox();
+        this.onChanged();
       },
 
-      updateInfoBox: function() {
-        if (!this.isVisible) return;
-        const offset = app.UI.elmData.scrollTop - this.limitTop + app.UI.elmCursor.offsetTop + 10,
-              infoData = this.getInfoData(offset);
+      getOffset: function() {
+        return app.UI.elmData.scrollTop - this.limitTop + app.UI.elmCursor.offsetTop + 10;
+      },
 
-        app.UI.elmFooter.innerHTML = infoData;
-        app.UI.elmFooter.scrollTop = 0;
+      onChanged: function() {
+        if (!this.isVisible) return;
+        if (this.changed) this.changed(this.getOffset());
       }
     },
 

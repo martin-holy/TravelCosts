@@ -34,12 +34,12 @@ if (!Date.prototype.getDOY) {
 
 if (!Date.prototype.toYMD) {
 // ReSharper disable once NativeTypePrototypeExtending
-  Date.prototype.toYMD = function () {
+  Date.prototype.toYMD = function (sep = '-') {
     return [
       this.getFullYear(),
       ('0' + (this.getMonth() + 1)).slice(-2),
       ('0' + this.getDate()).slice(-2)
-    ].join('-');
+    ].join(sep);
   };
 }
 

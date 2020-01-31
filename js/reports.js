@@ -9,19 +9,59 @@ var reports = {
   },
 
   runDemo: function() {
-    const params = new URLSearchParams(window.location.search);
-    switch (params.get('demoReport')) {
+    const repName = (new URLSearchParams(window.location.search)).get('demoReport');
+    if (!repName) return;
+
+    app.UI.elmMenu.innerHTML = '<li onclick="app.createAppMap();">Home</li>';
+
+    switch (repName) {
       case 'reportMonCosts': {
-        app.UI.elmMenu.innerHTML = '<li onclick="app.createAppMap();">Home</li>';
         reports.monCosts.run(true);
         break;
       }
       case 'reportCarDrives2': {
-        app.UI.elmMenu.innerHTML = '<li onclick="app.createAppMap();">Home</li>';
         reports.carDrives2.run(true);
         break;
       }
+      case 'reportCountriesStay': {
+        reports.gloCountriesStay.run(true);
+        break;
+      }
     }
+  },
+
+  initReport: async function(rep, demo) {
+    if (!document.getElementById(rep.id) || !app.UI.contentTabs.isActive('report')) {
+      if (demo) {
+        if (!(await this.getDataFromJson(rep))) {
+          app.createAppMap();
+          return;
+        }
+      }
+      else
+        await rep.getDataFromDb();
+
+      rep.init();
+    }
+  },
+
+  getDataFromJson: async function (rep) {
+    return app.fetchData(`/TravelCosts/${rep.fileName}.json`).then(async (res) => {
+      const json = await res.json();
+      document.getElementById('version').innerHTML = json.date;
+      rep.data = json.data;
+
+      return true;
+    }).catch(err => {
+      app.log(`Error when getting demo data. ${err}`, true);
+      return false;
+    });
+  },
+
+  saveAsJson: function (fileName) {
+    const rep = Object.values(this).filter(x => x.fileName === fileName);
+    if (!rep) return;
+    app.downloadDataAsJson({ date: new Date().toYMD(), data: rep[0].data }, `${fileName}.json`);
   },
 
   // returns min a max date from data containing dateFrom and dateTo
@@ -189,7 +229,7 @@ var reports = {
       `<div class="infoColumn"><svg width="90" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">${svgA.join('')}</svg></div>
        <div class="dataColumn"><svg width="${svgWidth + 2}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">${svgB.join('')}</svg></div>`;
 
-    app.UI.cursor.updateInfoBox();
+    app.UI.cursor.onChanged();
   }
 };
 
@@ -271,26 +311,17 @@ reports.carDrives = {
 // TODO get costsTypes
 reports.carDrives2 = {
   id: '__rep_Drives2',
+  fileName: 'reportCarDrives2',
   data: null,
   transportCostTypeId: 0,
   costsTypes: [{ id: 0, name: 'Transport', bgColor: '#1F4280', sum: 0 },
                { id: 5, name: 'Insurance', bgColor: '#ED1C29', sum: 0 },
                { id: 6, name: 'MOT', bgColor: '#905501', sum: 0 }],
   groupBy: 1,
+  lastInfoIndexes: null,
 
   run: async function(demo = false) {
-    if (!document.getElementById(this.id) || !app.UI.contentTabs.isActive('report')) {
-      if (demo) {
-        if (!(await this.getDataFromJson())) {
-          app.createAppMap();
-          return;
-        }
-      } else
-        await this.getDataFromDb();
-
-      this.init();
-    }
-
+    await reports.initReport(this, demo);
     this.groupBy = xSelect('__rep_groupBy').get()[0];
     reports.renderYearMonthTypeData(this.id, this.data, this.groupBy, '', 10, this.costsTypes.filter(x => x.id === 0));
   },
@@ -307,7 +338,7 @@ reports.carDrives2 = {
     selectGroupBy.set([1]);
     selectGroupBy.element.dataset.onchange = 'reports.carDrives2.run';
     app.UI.toolBar.clear();
-    app.UI.toolBar.appendHtml('<div class="toolBarIcon" onclick="reports.carDrives2.save();">▼</div>');
+    app.UI.toolBar.appendHtml(`<div class="toolBarIcon" onclick="reports.saveAsJson('${this.fileName}');">▼</div>`);
     app.UI.toolBar.appendElement(selectGroupBy.element);
 
     const divContainer = document.getElementById('report'),
@@ -318,7 +349,11 @@ reports.carDrives2 = {
     divContainer.appendChild(divRep);
 
     app.UI.contentTabs.active('report');
-    app.UI.cursor.getInfoData = this.getInfoData;
+    app.UI.cursor.changed = (offset) => {
+      const html = this.getInfoData(offset);
+      if (html !== null)
+        app.UI.footer.setContent(html);
+    }
     
     app.UI.footer.show();
     app.UI.cursor.show(divRep.offsetTop);
@@ -327,10 +362,16 @@ reports.carDrives2 = {
   getInfoData: function (offset) {
     const self = reports.carDrives2,
           [yi, miFrom, miTo] = reports.getYearMonthIndex(offset, 22, self.groupBy),
+          indexesHash = `${yi}-${miFrom}-${miTo}`,
           year = self.data[self.data.length - 1 - yi];
 
-    if (yi > self.data.length || !year)
+    if (self.lastInfoIndexes === indexesHash)
       return null;
+
+    self.lastInfoIndexes = indexesHash;
+
+    if (yi > self.data.length || !year)
+      return '';
 
     const drives = [];
     let sumPricePerDay = 0;
@@ -363,23 +404,6 @@ reports.carDrives2 = {
               </div>
               ${drivesList}
             </div>`;
-  },
-
-  save: function () {
-    app.downloadDataAsJson({ date: new Date().toYMD(), data: this.data }, 'reportCarDrives2.json');
-  },
-
-  getDataFromJson: async function () {
-    return app.fetchData('/TravelCosts/reportCarDrives2.json').then(async (res) => {
-      const json = await res.json();
-      document.getElementById('version').innerHTML = json.date;
-      this.data = json.data;
-
-      return true;
-    }).catch(err => {
-      app.log(`Error when getting demo data. ${err}`, true);
-      return false;
-    });
   },
 
   getDataFromDb: async function () {
@@ -497,30 +521,22 @@ reports.carRefueling = {
 
 reports.monCosts = {
   id: '__rep_Costs',
-  data: null,
+  fileName: 'reportMonCosts',
+  data: {
+    costsTypes: [],
+    data: []
+  },
   costsTypes: null,
   selectedTypes: null,
   groupBy: 1,
+  lastInfoIndexes: null,
 
   run: async function(demo = false) {
-    if (!document.getElementById(this.id) || !app.UI.contentTabs.isActive('report')) {
-      if (demo) {
-        if (!(await this.getDataFromJson())) {
-          app.createAppMap();
-          return;
-        }
-      }
-      else {
-        this.costsTypes = (await appStores.MON_CostsTypes.data()).map(x => ({ ...x, sum: 0 })).orderBy('name');
-        await reports.monCosts.getDataFromDb();
-      }
-      reports.monCosts.init();
-    }
-
+    await reports.initReport(this, demo);
     this.selectedTypes = xSelect('__rep_costsTypes').get();
     if (this.selectedTypes.length === 0) return;
     this.groupBy = xSelect('__rep_groupBy').get()[0];
-    reports.renderYearMonthTypeData(`${this.id}_data`, this.data, this.groupBy, '€', 0, this.costsTypes.filter(x => this.selectedTypes.includes(x.id)));
+    reports.renderYearMonthTypeData(`${this.id}_data`, this.data.data, this.groupBy, '€', 0, this.data.costsTypes.filter(x => this.selectedTypes.includes(x.id)));
   },
 
   init: function () {
@@ -540,11 +556,11 @@ reports.monCosts = {
     selectGroupBy.set([1]);
     selectGroupBy.element.dataset.onchange = 'reports.monCosts.run';
     app.UI.toolBar.clear();
-    app.UI.toolBar.appendHtml('<div class="toolBarIcon" onclick="reports.monCosts.save();">▼</div>');
+    app.UI.toolBar.appendHtml(`<div class="toolBarIcon" onclick="reports.saveAsJson('${this.fileName}');">▼</div>`);
     app.UI.toolBar.appendElement(selectGroupBy.element);
 
     // Costs Types Select
-    for (const x of this.costsTypes) {
+    for (const x of this.data.costsTypes) {
       types.push({ value: x.id, name: x.name, bgColor: x.bgColor });
       typesIds.push(x.id);
     }
@@ -564,7 +580,11 @@ reports.monCosts = {
     divContainer.appendChild(divRep);
 
     app.UI.contentTabs.active('report');
-    app.UI.cursor.getInfoData = this.getInfoData;
+    app.UI.cursor.changed = (offset) => {
+      const html = this.getInfoData(offset);
+      if (html !== null)
+        app.UI.footer.setContent(html);
+    }
     app.UI.footer.show();
     app.UI.cursor.show(divRepData.offsetTop);
   },
@@ -572,13 +592,19 @@ reports.monCosts = {
   getInfoData: function(offset) {
     const self = reports.monCosts,
           [yi, miFrom, miTo] = reports.getYearMonthIndex(offset, 22, self.groupBy),
-          year = self.data[self.data.length - 1 - yi];
+          indexesHash = `${yi}-${miFrom}-${miTo}`,
+          year = self.data.data[self.data.data.length - 1 - yi];
 
-    if (yi > self.data.length)
+    if (self.lastInfoIndexes === indexesHash)
       return null;
 
+    self.lastInfoIndexes = indexesHash;
+
+    if (yi > self.data.data.length)
+      return '';
+
     // group by types
-    const costsTypes = self.costsTypes.filter(x => self.selectedTypes.includes(x.id)).map(x => ({ ...x, data: []}));
+    const costsTypes = self.data.costsTypes.filter(x => self.selectedTypes.includes(x.id)).map(x => ({ ...x, data: []}));
     for (let m = miFrom; m < miTo + 1; m++) {
       const month = year.months[m];
       for (const type of month.types) {
@@ -620,24 +646,6 @@ reports.monCosts = {
     return `<div id="__rep_Costs_info" class="repFooterInfo"><ul>${types.join('')}</ul></div>`;
   },
 
-  save: function () {
-    app.downloadDataAsJson({ date: new Date().toYMD(), costsTypes: this.costsTypes, data: this.data }, 'reportMonCosts.json');
-  },
-
-  getDataFromJson: async function () {
-    return app.fetchData('/TravelCosts/reportMonCosts.json').then(async (res) => {
-      const json = await res.json();
-      document.getElementById('version').innerHTML = json.date;
-      this.costsTypes = json.costsTypes;
-      this.data = json.data;
-
-      return true;
-    }).catch(err => {
-      app.log(`Error when getting demo data. ${err}`, true);
-      return false;
-    });
-  },
-
   getDataFromDb: async function() {
     const costs = (await appStores.MON_Costs.data())
             .map(x => ({ date: x.date, eur: x.eur, desc: x.desc, costTypeId: x.costTypeId })).orderBy('date', false),
@@ -648,9 +656,10 @@ reports.monCosts = {
           yearFrom = Number.parseInt(minMaxDate[0].substring(0, 4)),
           yearTo = Number.parseInt(minMaxDate[1].substring(0, 4));
 
-    this.data = reports.getYearMonthDataStructure(yearFrom, yearTo);
-    reports.mapDateData(this.data, costs, 'eur', yearFrom);
-    reports.mapDateData(this.data, transportData, 'eur', yearFrom);
+    this.data.costsTypes = (await appStores.MON_CostsTypes.data()).map(x => ({ ...x, sum: 0 })).orderBy('name');
+    this.data.data = reports.getYearMonthDataStructure(yearFrom, yearTo);
+    reports.mapDateData(this.data.data, costs, 'eur', yearFrom);
+    reports.mapDateData(this.data.data, transportData, 'eur', yearFrom);
   },
 
   getTransportData: async (personId) => {
@@ -690,5 +699,204 @@ reports.monCosts = {
     }
 
     return output;
+  }
+};
+
+reports.gloCountriesStay = {
+  id: '__rep_gloCountriesStay',
+  fileName: 'reportGloCountriesStay',
+  data: {
+    countriesStay: [],
+    drives: []
+  },
+  maxDate: null,
+  pxPerDayCountries: 4,
+  pxPerDayDrives: 10,
+  divCountries: null,
+  divDrives: null,
+  divCursorDate: null,
+  scrollTopUpdating: false,
+
+  run: async function(demo = false) {
+    await reports.initReport(this, demo);
+    this.render();
+    this.onScroll();
+  },
+
+  init: function() {
+    this.divCountries = document.createElement('div');
+    this.divCountries.id = `${this.id}_Countries`;
+    this.divCountries.addEventListener('scroll', this.onScroll);
+
+    this.divDrives = document.createElement('div');
+    this.divDrives.id = `${this.id}_Drives`;
+    this.divDrives.addEventListener('scroll', this.onScroll);
+
+    this.divCursorDate = document.createElement('div');
+    this.divCursorDate.className = 'cursorDate';
+
+    const divContainer = document.createElement('div');
+    divContainer.id = this.id;
+    divContainer.appendChild(this.divCursorDate);
+    divContainer.appendChild(this.divCountries);
+    divContainer.appendChild(this.divDrives);
+
+    document.getElementById('report').innerHTML = '';
+    document.getElementById('report').appendChild(divContainer);
+
+    app.UI.setTitle('Countries stay');
+    app.UI.contentTabs.active('report');
+    app.UI.toolBar.clear();
+    app.UI.toolBar.appendHtml(`<div class="toolBarIcon" onclick="reports.saveAsJson('${this.fileName}');">▼</div>`);
+    app.UI.footer.show();
+    app.UI.cursor.show(divContainer.offsetTop);
+    app.UI.cursor.changed = (offset) => {
+      this.onScroll(null);
+      this.divCursorDate.style.top = offset + divContainer.offsetTop + 'px';
+    };
+  },
+
+  getDataFromDb: async function() {
+    const countries = await appStores.GLO_Countries.data();
+    this.data.countriesStay = (await appStores.GLO_CountriesStay.data({ sorted: true })).map(x => {
+      const country = countries.find(c => c.id === x.countryId),
+        o = {
+          dateFrom: x.dateFrom,
+          dateTo: x.dateTo ? x.dateTo : new Date(Date.now()).toYMD(),
+          name: country.name,
+          code: country.code.toLowerCase()
+        };
+
+      o.days = x.days ? x.days : numberOfDaysBetween(o);
+
+      return o;
+    });
+
+    let lastDate = new Date().addDays(1).toYMD();
+    this.data.drives = (await appStores.CAR_Drives.data()).orderBy('date', false).map(x => {
+      const o = {
+        dateFrom: x.date,
+        dateTo: lastDate,
+        name: x.desc,
+        km: x.km
+      };
+
+      o.days = numberOfDaysBetween(o) - 1;
+      lastDate = x.date;
+
+      return o;
+    });
+  },
+
+  onScroll: function(e) {
+    const self = reports.gloCountriesStay;
+    if (self.scrollTopUpdating) {
+      self.scrollTopUpdating = false;
+      return;
+    }
+
+    const cursorOffset = app.UI.cursor.getOffset(),
+      scrollOnCountries = !e || e.target.id === `${self.id}_Countries`,
+      days = scrollOnCountries
+        ? (cursorOffset + self.divCountries.scrollTop) / self.pxPerDayCountries
+        : (cursorOffset + self.divDrives.scrollTop) / self.pxPerDayDrives,
+      div = scrollOnCountries ? self.divDrives : self.divCountries,
+      targetPxPerDay = scrollOnCountries ? self.pxPerDayDrives : self.pxPerDayCountries,
+      targetScrollTop = Math.round((days * targetPxPerDay) - cursorOffset);
+
+    if (Math.round(div.scrollTop) !== targetScrollTop) {
+      if (e) { // scrolling on divCountries or divDrives
+        self.scrollTopUpdating = true;
+        div.scrollTop = targetScrollTop;
+      } else { // dragging cursor
+        div.removeEventListener('scroll', self.onScroll);
+        div.scrollTop = targetScrollTop;
+        div.addEventListener('scroll', self.onScroll);
+      }
+
+      self.divCursorDate.innerHTML = new Date(self.maxDate).addDays(days * -1).toYMD('.');
+      self.setInfoBox(days);
+    }
+  },
+
+  setInfoBox: function (days) {
+    const getRec = (data, d) => {
+      for (const x of data) {
+        d -= x.days;
+        if (d < 0)
+          return x;
+      }
+      return null;
+    };
+
+    const df = (date) => date.split('-').join('.');
+
+    const ul = [],
+      drive = getRec(this.data.drives, Number(days)),
+      country = getRec(this.data.countriesStay, Number(days)),
+      countryCode = country ? country.code : '';
+
+    if (country) {
+      ul.push(`<li>${df(country.dateFrom)} - ${df(country.dateTo)} - <span>${country.days} days</span></li>`);
+      ul.push(`<li>${country.name}</li>`);
+    }
+
+    if (drive) {
+      ul.push(`<li>${df(drive.dateFrom)} - ${df(drive.dateTo)} - <span>${drive.days} days</span></li>`);
+      ul.push(`<li>${drive.name} <span>${drive.km} km</span></li>`);
+    }
+
+    app.UI.footer.setContent(`
+      <div id="__rep_gloCountriesStay_info">
+        <div><img src="img/flags/${countryCode}.png" /></div>
+        <ul>${ul.join('')}</ul>
+      </div>`);
+  },
+
+  render: function () {
+    const svgA = [],
+          svgB = [];
+    let top = 0,
+        nameTop = 0,
+        daysTotal = 0;
+
+    if (this.data.countriesStay.length !== 0)
+      this.maxDate = this.data.countriesStay[0].dateTo;
+
+    // Countries Stay
+    for (const stay of this.data.countriesStay) {
+      const height = stay.days * this.pxPerDayCountries,
+            halfTop = top + (height / 2);
+
+      nameTop = halfTop - nameTop < 25 ? nameTop + 25 : halfTop;
+
+      svgA.push(`<text x="85" y="${nameTop}" class="stayDays">${stay.days}</text>`);
+      svgA.push(`<line x1="30" y1="${halfTop}" x2="52" y2="${nameTop}" />`);
+      svgA.push(`<image x="50" y="${nameTop - 10}" height="21" href="img/flags/${stay.code}.png" />`);
+      svgA.push(`<rect x="10" y="${top}" width="20" height="${height}" />`);
+
+      top += height;
+      daysTotal += stay.days;
+    }
+
+    this.divCountries.innerHTML += `<svg width="120" height="${top}" xmlns="http://www.w3.org/2000/svg">${svgA.join('')}</svg>`;
+
+    // Drives
+    top = 0;
+    nameTop = 0;
+    for (const drive of this.data.drives) {
+      const height = drive.days * this.pxPerDayDrives,
+            halfTop = top + (height / 2);
+
+      nameTop = halfTop - nameTop < 15 ? nameTop + 15 : halfTop;
+
+      svgB.push(`<line x1="20" y1="${halfTop}" x2="38" y2="${nameTop}" />`);
+      svgB.push(`<text x="40" y="${nameTop}" class="driveName">${drive.name} <tspan>${drive.days}</tspan></text>`);
+      svgB.push(`<rect x="0" y="${top}" width="20" height="${height}" />`);
+
+      top += height;
+    }
+
+    this.divDrives.innerHTML += `<svg width="250" height="${daysTotal * this.pxPerDayDrives}" xmlns="http://www.w3.org/2000/svg">${svgB.join('')}</svg>`;
   }
 };

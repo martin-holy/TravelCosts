@@ -3,54 +3,48 @@ class AppStore {
     this.dbSchema = dbSchema;
   }
 
-  data(args = {}) {
+  async data(args = {}) {
     // args: sorted(bool) => sort by default
     //       orderBy(string) => sort by column name
     //       orderAsc(bool) => true is default
 
     // Get Store Records
-    const promises = [];
-    promises.push(new Promise((resolve, reject) => {
-      if (args.sorted) { // sort by default
-        args.orderBy = this.dbSchema.orderBy;
-        args.orderAsc = this.dbSchema.orderAsc;
-      }
-      if (args.orderBy) args.sorted = true;
-
-      if (this.cache) {
-        if (args.sorted)
-          this.cache.orderBy(args.orderBy, args.orderAsc);
-        resolve(this.cache);
-      } else {
-        const tx = app.DB.db.transaction([this.dbSchema.name], 'readonly'),
-              request = tx.objectStore(this.dbSchema.name).getAll();
-        
-        request.onsuccess = (e) => {
-          this.cache = e.target.result;
-          if (args.sorted)
-            this.cache.orderBy(args.orderBy, args.orderAsc);
-          resolve(this.cache);
-        };
-
-        request.onerror = (e) => {
-          reject(e.target.errorCode);
-          app.log(`getStoreRecords: ${e.target.errorCode}`, true);
-        };
-      }
-    }));
+    if (!this.cache)
+      await this.cacheData().catch(() => { return []; });
 
     // Link Stores and Get Linked Stores Records
     for (const prop of this.dbSchema.properties) {
       if (!prop.source) continue;
       prop.source.store = appStores[prop.source.name];
-      promises.push(prop.source.store.data({sorted: true}));
+      await prop.source.store.data({ sorted: true });
     }
 
-    return Promise.all(promises).then((result) => {
-      return new Promise((resolve) => {
-        // resolve only with Store Records
-        resolve(result[0]);
-      });
+    // Sort data
+    if (args.sorted) { // sort by default
+      args.orderBy = this.dbSchema.orderBy;
+      args.orderAsc = this.dbSchema.orderAsc;
+    }
+
+    if (args.sorted || args.orderBy)
+      this.cache.orderBy(args.orderBy, args.orderAsc);
+
+    return this.cache;
+  }
+
+  cacheData() {
+    return new Promise((resolve, reject) => {
+      const tx = app.DB.db.transaction([this.dbSchema.name], 'readonly'),
+        request = tx.objectStore(this.dbSchema.name).getAll();
+
+      request.onsuccess = (e) => {
+        this.cache = e.target.result;
+        resolve();
+      };
+
+      request.onerror = (e) => {
+        app.log(`getStoreRecords: ${e.target.errorCode}`, true);
+        reject();
+      };
     });
   }
 
@@ -169,6 +163,9 @@ const appStores = {
       { name: 'dateTo', title: 'To', type: 'date', align: 'center' },
       { name: 'countryId', title: 'Country', type: 'select', required: true, source: { name: 'GLO_Countries', property: 'name' }},
       { name: 'days', title: 'Days', type: 'calc', align: 'right', funcName: 'numberOfDaysBetween' }
+    ],
+    functions: [
+      { name: 'reports.gloCountriesStay.run', title: 'Report' }
     ]
   }),
 

@@ -62,6 +62,44 @@
         "/TravelCosts/js/appCore.js",
         "/TravelCosts/css/dark.css"
       ]
+    },
+    {
+      "version": "v2020.01.31",
+      "files": [
+        "/TravelCosts/index.html",
+        "/TravelCosts/js/reports.js",
+        "/TravelCosts/js/appCore.js",
+        "/TravelCosts/js/appStores.js",
+        "/TravelCosts/css/dark.css",
+        "/TravelCosts/js/extensions.js",
+        "/TravelCosts/img/flags/AL.png",
+        "/TravelCosts/img/flags/AT.png",
+        "/TravelCosts/img/flags/BG.png",
+        "/TravelCosts/img/flags/BO.png",
+        "/TravelCosts/img/flags/BR.png",
+        "/TravelCosts/img/flags/CA.png",
+        "/TravelCosts/img/flags/CZ.png",
+        "/TravelCosts/img/flags/DE.png",
+        "/TravelCosts/img/flags/EC.png",
+        "/TravelCosts/img/flags/ES.png",
+        "/TravelCosts/img/flags/FR.png",
+        "/TravelCosts/img/flags/GB.png",
+        "/TravelCosts/img/flags/GR.png",
+        "/TravelCosts/img/flags/GY.png",
+        "/TravelCosts/img/flags/HR.png",
+        "/TravelCosts/img/flags/HU.png",
+        "/TravelCosts/img/flags/CH.png",
+        "/TravelCosts/img/flags/IT.png",
+        "/TravelCosts/img/flags/ME.png",
+        "/TravelCosts/img/flags/PE.png",
+        "/TravelCosts/img/flags/PL.png",
+        "/TravelCosts/img/flags/PT.png",
+        "/TravelCosts/img/flags/RO.png",
+        "/TravelCosts/img/flags/SI.png",
+        "/TravelCosts/img/flags/SK.png",
+        "/TravelCosts/img/flags/TT.png",
+        "/TravelCosts/img/flags/US.png"
+      ]
     }
   ]
 }
