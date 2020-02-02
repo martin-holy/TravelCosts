@@ -165,7 +165,8 @@ const appStores = {
       { name: 'days', title: 'Days', type: 'calc', align: 'right', funcName: 'numberOfDaysBetween' }
     ],
     functions: [
-      { name: 'reports.gloCountriesStay.run', title: 'Report' }
+      { name: 'reports.gloCountriesStay.run', title: 'Report' },
+      { name: 'reports.gloCountriesStaySum.run', title: 'Report Sum' }
     ]
   }),
 

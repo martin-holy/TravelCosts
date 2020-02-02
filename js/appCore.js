@@ -88,7 +88,7 @@ const app = {
   DB: {
     db: null,
     dbName: 'TravelCosts',
-    dbVersion: 13,
+    dbVersion: 14,
     dbSchema: [],
 
     open: function() {
@@ -183,6 +183,17 @@ const app = {
         const gloCountriesStay = await appStores.ADM_AppStores.getRecordById(11);
         gloCountriesStay.functions = [
           { name: 'reports.gloCountriesStay.run', title: 'Report' }
+        ];
+
+        await appStores.ADM_AppStores.update([gloCountriesStay]);
+      }
+
+      if (settings.dbVersion < 14) {
+        // GLO_CountriesStay
+        const gloCountriesStay = await appStores.ADM_AppStores.getRecordById(11);
+        gloCountriesStay.functions = [
+          { name: 'reports.gloCountriesStay.run', title: 'Report' },
+          { name: 'reports.gloCountriesStay2.run', title: 'Report2' }
         ];
 
         await appStores.ADM_AppStores.update([gloCountriesStay]);

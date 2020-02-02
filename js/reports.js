@@ -27,6 +27,10 @@ var reports = {
         reports.gloCountriesStay.run(true);
         break;
       }
+      case 'reportCountriesStaySum': {
+        reports.gloCountriesStaySum.run(true);
+        break;
+      }
     }
   },
 
@@ -899,4 +903,117 @@ reports.gloCountriesStay = {
 
     this.divDrives.innerHTML += `<svg width="250" height="${daysTotal * this.pxPerDayDrives}" xmlns="http://www.w3.org/2000/svg">${svgB.join('')}</svg>`;
   }
+};
+
+reports.gloCountriesStaySum = {
+  id: '__rep_gloCountriesStaySum',
+  fileName: 'reportGloCountriesStaySum',
+  data: [],
+  pxPerDay: 1,
+
+  run: async function (demo = false) {
+    await reports.initReport(this, demo);
+    this.render();
+  },
+
+  init: function () {
+    const divRep = document.getElementById('report');
+    divRep.innerHTML = `<div id="${this.id}"></div>`;
+
+    app.UI.setTitle('Countries stay sum');
+    app.UI.contentTabs.active('report');
+    app.UI.toolBar.clear();
+    app.UI.toolBar.appendHtml(`<div class="toolBarIcon" onclick="reports.saveAsJson('${this.fileName}');">▼</div>`);
+    app.UI.footer.hide();
+    app.UI.cursor.hide();
+  },
+
+  getDataFromDb: async function () {
+    const countriesStay = await appStores.GLO_CountriesStay.data();
+    const countries = (await appStores.GLO_Countries.data()).map(country => {
+      const days = countriesStay.filter(stay => stay.countryId === country.id).map(stay => {
+        if (!stay.dateTo)
+          stay.dateTo = new Date(Date.now()).toYMD();
+        if (!stay.days)
+          stay.days = numberOfDaysBetween(stay);
+
+        return stay;
+      }).reduce((acc, cur) => acc + cur.days, 0);
+
+      return { name: country.name, days };
+    });
+
+    this.data = countries.orderBy('days', false);
+  },
+
+  render: function () {
+    const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
+      const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+
+      return {
+        x: (centerX + (radius * Math.cos(angleInRadians))).round(2),
+        y: (centerY + (radius * Math.sin(angleInRadians))).round(2)
+      };
+    };
+
+    const describeArc = (x, y, radius, startAngle, endAngle) => {
+      const start = polarToCartesian(x, y, radius, endAngle),
+            end = polarToCartesian(x, y, radius, startAngle),
+            largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+
+      return [
+        'M', x, y,
+        'L', start.x, start.y,
+        'A', radius, radius, 0, largeArcFlag, 0, end.x, end.y,
+        'Z'
+      ].join(' ');
+    };
+
+    const svg = [],
+          degPerDay = 360 / this.data.reduce((acc, cur) => acc + cur.days, 0),
+          degPerColor = Math.round(360 / this.data.length),
+          divRep = document.getElementById(this.id),
+          halfWidth = divRep.clientWidth / 2;
+    let lastAngle = 0,
+        lastColor = 0,
+        top = halfWidth * 2,
+        daysSum = 0;
+
+    for (const country of this.data) {
+      const endAngle = lastAngle + (degPerDay * country.days),
+            color = `hsl(${lastColor}, 50%, 40%)`;
+
+      svg.push(`<rect x="20" y="${top}" height="20" width="30" fill="${color}" />`);
+      svg.push(`<text x="55" y="${top + 11}">${country.name} <tspan>${daysToYMD(country.days, true)}</tspan></text>`);
+      svg.push(`<path fill="${color}" d="${describeArc(halfWidth, halfWidth, halfWidth - 20, lastAngle, endAngle)}" />`);
+
+      lastAngle = endAngle;
+      lastColor += degPerColor;
+      top += 22;
+      daysSum += country.days;
+    }
+
+    svg.push(`<circle cx="${halfWidth}" cy="${halfWidth}" r="${halfWidth / 2}" fill="#33373A" />`);
+    svg.push(`<text x="${halfWidth}" y="${halfWidth - 20}" class="daysSum">${daysSum}</text>`);
+    svg.push(`<text x="${halfWidth}" y="${halfWidth + 30}" class="daysSumSpread">${daysToYMD(daysSum)}</text>`);
+
+    divRep.innerHTML = `<svg width="${halfWidth * 2}" height="${top}" xmlns="http://www.w3.org/2000/svg">${svg.join('')}</svg>`;
+  }
+};
+
+const daysToYMD = (days, short = false) => {
+  const y = Math.floor(days / 365);
+  days -= y * 365;
+  const m = Math.floor(days / 30.4);
+  days -= m * 30.4;
+  const d = Math.round(days);
+
+  if (short)
+    return [`${y ? `${y}y ` : ''}`,
+            `${m ? `${m}m ` : ''}`,
+            `${d ? `${d}d` : ''}`].join('');
+
+  return [`${y ? (`${y} year${y > 1 ? 's ' : ' '}`) : ''}`,
+          `${m ? (`${m} month${m > 1 ? 's ' : ' '}`) : ''}`,
+          `${d ? (`${d} day${d > 1 ? 's' : ''}`) : ''}`].join('');
 };

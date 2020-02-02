@@ -106,6 +106,15 @@
       "files": [
         "/TravelCosts/js/reports.js"
       ]
+    },
+    {
+      "version": "v2020.02.02",
+      "files": [
+        "/TravelCosts/js/appStores.js",
+        "/TravelCosts/js/appCore.js",
+        "/TravelCosts/js/reports.js",
+        "/TravelCosts/css/dark.css"
+      ]
     }
   ]
 }
