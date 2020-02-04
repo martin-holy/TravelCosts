@@ -1,69 +1,6 @@
 {
   "updates": [
     {
-      "version": "v2019.09.30",
-      "files": [
-        "/TravelCosts/js/appCore.js"
-      ]
-    },
-    {
-      "version": "v2019.10.30",
-      "files": [
-        "/TravelCosts/js/custom.js"
-      ]
-    },
-    {
-      "version": "v2019.10.30.2",
-      "files": [
-        "/TravelCosts/js/custom.js",
-        "/TravelCosts/js/appStores.js"
-      ]
-    },
-    {
-      "version": "v2019.10.31",
-      "files": [
-        "/TravelCosts/js/custom.js"
-      ]
-    },
-    {
-      "version": "v2020.01.13",
-      "files": [
-        "/TravelCosts/index.html",
-        "/TravelCosts/js/appCore.js",
-        "/TravelCosts/js/appStores.js",
-        "/TravelCosts/js/custom.js",
-        "/TravelCosts/js/extensions.js",
-        "/TravelCosts/js/reports.js",
-        "/TravelCosts/css/dark.css"
-      ]
-    },
-    {
-      "version": "v2020.01.13.1",
-      "files": [
-        "/TravelCosts/js/appCore.js",
-        "/TravelCosts/js/appStores.js",
-        "/TravelCosts/js/reports.js",
-        "/TravelCosts/css/dark.css"
-      ]
-    },
-    {
-      "version": "v2020.01.16",
-      "files": [
-        "/TravelCosts/index.html",
-        "/TravelCosts/js/appCore.js",
-        "/TravelCosts/js/custom.js",
-        "/TravelCosts/js/reports.js",
-        "/TravelCosts/css/dark.css"
-      ]
-    },
-    {
-      "version": "v2020.01.16.1",
-      "files": [
-        "/TravelCosts/js/appCore.js",
-        "/TravelCosts/css/dark.css"
-      ]
-    },
-    {
       "version": "v2020.01.31",
       "files": [
         "/TravelCosts/index.html",
@@ -102,17 +39,13 @@
       ]
     },
     {
-      "version": "v2020.01.31.1",
+      "version": "v2020.02.04",
       "files": [
-        "/TravelCosts/js/reports.js"
-      ]
-    },
-    {
-      "version": "v2020.02.02",
-      "files": [
+        "/TravelCosts/index.html",
         "/TravelCosts/js/appStores.js",
         "/TravelCosts/js/appCore.js",
         "/TravelCosts/js/reports.js",
+        "/TravelCosts/js/extensions.js",
         "/TravelCosts/css/dark.css"
       ]
     }

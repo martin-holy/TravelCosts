@@ -148,57 +148,6 @@ const app = {
         await appStores.ADM_AppStoreGroups.update([g]);
       }
 
-      if (settings.dbVersion < 12) {
-        // ADM_AppStores
-        const admAppStores = await appStores.ADM_AppStores.getRecordById(1);
-        admAppStores.functions = [
-          { name: 'app.DB.import', title: 'Import data' },
-          { name: 'app.DB.export', title: 'Export data' }
-        ];
-
-        // CAR_Drives
-        const carDrives = await appStores.ADM_AppStores.getRecordById(30);
-        carDrives.functions = [
-          { name: 'reports.carDrives.run', title: 'Report Km/Days/Places' },
-          { name: 'reports.carDrives2.run', title: 'Report Km/EUR' }
-        ];
-
-        // CAR_Refueling
-        const carRefueling = await appStores.ADM_AppStores.getRecordById(31);
-        carRefueling.functions = [
-          { name: 'reports.carRefueling.run', title: 'Report' }
-        ];
-
-        // MON_Costs
-        const monCosts = await appStores.ADM_AppStores.getRecordById(20);
-        monCosts.functions = [
-          { name: 'reports.monCosts.run', title: 'Report' }
-        ];
-
-        await appStores.ADM_AppStores.update([admAppStores, carDrives, carRefueling, monCosts]);
-      }
-
-      if (settings.dbVersion < 13) {
-        // GLO_CountriesStay
-        const gloCountriesStay = await appStores.ADM_AppStores.getRecordById(11);
-        gloCountriesStay.functions = [
-          { name: 'reports.gloCountriesStay.run', title: 'Report' }
-        ];
-
-        await appStores.ADM_AppStores.update([gloCountriesStay]);
-      }
-
-      if (settings.dbVersion < 14) {
-        // GLO_CountriesStay
-        const gloCountriesStay = await appStores.ADM_AppStores.getRecordById(11);
-        gloCountriesStay.functions = [
-          { name: 'reports.gloCountriesStay.run', title: 'Report' },
-          { name: 'reports.gloCountriesStay2.run', title: 'Report2' }
-        ];
-
-        await appStores.ADM_AppStores.update([gloCountriesStay]);
-      }
-
       settings.dbVersion = this.dbVersion;
       await appStores.ADM_AppSettings.update([settings]);
     },
@@ -408,6 +357,13 @@ const app = {
     },
 
     menu: {
+      toggle: function() {
+        if (app.UI.elmMenu.style.visibility === 'visible')
+          this.hide();
+        else
+          this.open();
+      },
+
       open: function() {
         app.UI.elmMenu.style.visibility = 'visible';
       },
@@ -430,11 +386,19 @@ const app = {
           items.push(`<li onclick="app.form.load(\'${s.name}\');">${s.title}</li>`);
         }
 
-        //forms functions
+        // forms functions
         if (app.form.current.dbSchema.functions) {
-          items.push('<li class="liDivider">---</li>');
+          items.push('<li class="liDivider">Tools</li>');
           for (const func of app.form.current.dbSchema.functions) {
             items.push(`<li onclick="${func.name}();">${func.title}</li>`);
+          }
+        }
+
+        // forms reports
+        if (app.form.current.dbSchema.reports) {
+          items.push('<li class="liDivider">Reports</li>');
+          for (const repName of app.form.current.dbSchema.reports) {
+            items.push(`<li onclick="reports.${repName}.run();">${reports[repName].title}</li>`);
           }
         }
 
@@ -874,7 +838,7 @@ window.addEventListener('load', async () => {
   await app.run();
 
   // run demo report if search param is demoReport
-  reports.runDemo();
+  repTools.runDemo();
 });
 
 var updateAppCache = async function (appName) {

@@ -278,6 +278,7 @@ ul {
 
 #edit td:first-child {
   border-bottom: 1px solid #33373A;
+  white-space: nowrap;
 }
 
 #edit tr:last-child td:first-child {
@@ -464,124 +465,124 @@ input {
   color: #70dc35;
 }
 
-/* #__rep_Costs */
-#__rep_Costs #__rep_costsTypes {
+/* #__RepMonCosts */
+#__RepMonCosts #__RepMonCostsTypes {
   display: flex;
   position: sticky;
   top: 0;
 }
 
-#__rep_Costs_data {
+#__RepMonCosts_data {
   display: flex;
 }
 
-#__rep_Costs_info {
+#__RepMonCosts_info {
   height: 125px;
 }
 
-#__rep_Costs_info > ul > li {
+#__RepMonCosts_info > ul > li {
   border-bottom: 1px solid black;
 }
 
-#__rep_Costs_info > ul > li:last-child {
+#__RepMonCosts_info > ul > li:last-child {
   border-bottom: none;
 }
 
-#__rep_Costs_info .typeHeader {
+#__RepMonCosts_info .typeHeader {
   display: flex;
   justify-content: space-between;
 }
 
-#__rep_Costs_info .typeHeader span:first-child {
+#__RepMonCosts_info .typeHeader span:first-child {
   font-size: 16px;
 }
 
-#__rep_Costs_info li {
+#__RepMonCosts_info li {
   white-space: nowrap;
   padding: 2px;
 }
 
-/* #__rep_Drives2 */
-#__rep_Drives2 {
+/* #__RepCarDrives */
+#__RepCarDrives {
   display: flex;
 }
 
-#__rep_Drives2 .dataColumn rect {
+#__RepCarDrives .dataColumn rect {
   stroke: black;
 }
 
-#__rep_Drives2_info {
+#__RepCarDrives_info {
   height: 125px;
 }
 
-#__rep_Drives2_info ul {
+#__RepCarDrives_info ul {
   padding: 2px;
 }
 
-#__rep_Drives2_info li {
+#__RepCarDrives_info li {
   white-space: nowrap;
   padding: 1px;
 }
 
-#__rep_Drives2_info span:nth-child(2) {
+#__RepCarDrives_info span:nth-child(2) {
   color: #14bcff;
 }
 
-#__rep_Drives2_info div span:last-child {
+#__RepCarDrives_info div span:last-child {
   font-size: 14px;
 }
 
-#__rep_Drives2_info span:last-child {
+#__RepCarDrives_info span:last-child {
   font-size: 12px;
   color: #70dc35;
 }
 
-#__rep_Drives2_info span {
+#__RepCarDrives_info span {
   padding-right: 3px;
 }
 
-#__rep_Drives2_info div span:first-child {
+#__RepCarDrives_info div span:first-child {
   color: #ff8400;
   padding-left: 3px;
 }
 
-/* #__rep_gloCountriesStay */
-#__rep_gloCountriesStay {
+/* #__RepGloCountriesStay */
+#__RepGloCountriesStay {
   display: flex;
   height: 100%;
 }
 
-#__rep_gloCountriesStay > div {
+#__RepGloCountriesStay > div {
   overflow: auto;
   flex: none;
 }
 
-#__rep_gloCountriesStay rect {
+#__RepGloCountriesStay rect {
   stroke: black;
   fill: #007acc;
 }
 
-#__rep_gloCountriesStay text.driveName {
+#__RepGloCountriesStay text.driveName {
   font-size: 12px;
   text-anchor: start;
 }
 
-#__rep_gloCountriesStay text tspan {
+#__RepGloCountriesStay text tspan {
   fill: #70dc35;
 }
 
-#__rep_gloCountriesStay text.stayDays {
+#__RepGloCountriesStay text.stayDays {
   text-anchor: start;
   fill: #70dc35;
 }
 
-#__rep_gloCountriesStay polyline, #__rep_gloCountriesStay line {
+#__RepGloCountriesStay polyline, #__RepGloCountriesStay line {
   stroke: #007acc;
   stroke-width: 2px;
   fill: none;
 }
 
-#__rep_gloCountriesStay .cursorDate {
+#__RepGloCountriesStay .cursorDate {
   position: absolute;
   top: 48px;
   left: 22px;
@@ -594,7 +595,7 @@ input {
   background-color: rgba(0, 0, 0, 0.8);
 }
 
-#__rep_gloCountriesStay_info {
+#__RepGloCountriesStay_info {
   height: 65px;
   display: flex;
   font-size: 12px;
@@ -602,42 +603,42 @@ input {
   text-shadow: 3px 3px 8px black;
 }
 
-#__rep_gloCountriesStay_info > div {
+#__RepGloCountriesStay_info > div {
   width: 55px;
 }
 
-#__rep_gloCountriesStay_info img {
+#__RepGloCountriesStay_info img {
   margin-left: 2px;
 }
 
-#__rep_gloCountriesStay_info ul li:nth-child(even){
+#__RepGloCountriesStay_info ul li:nth-child(even){
   color: #14bcff;
 }
 
-#__rep_gloCountriesStay_info ul li span {
+#__RepGloCountriesStay_info ul li span {
   color: #70dc35;
 }
 
-#__rep_gloCountriesStaySum svg text {
+#__RepGloCountriesStaySum svg text {
   text-anchor: start;
   font-size: 13px;
 }
 
-#__rep_gloCountriesStaySum svg text tspan {
+#__RepGloCountriesStaySum svg text tspan {
   fill: #70dc35;
 }
 
-#__rep_gloCountriesStaySum svg rect {
+#__RepGloCountriesStaySum svg rect {
   stroke: black;
   stroke-width: 1px;
 }
 
-#__rep_gloCountriesStaySum svg .daysSum {
+#__RepGloCountriesStaySum svg .daysSum {
   font-size: 50px;
   text-anchor: middle;
 }
 
-#__rep_gloCountriesStaySum svg .daysSumSpread {
+#__RepGloCountriesStaySum svg .daysSumSpread {
   font-size: 20px;
   text-anchor: middle;
 }

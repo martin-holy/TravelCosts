@@ -182,3 +182,30 @@ var xSelect = function(id) {
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// get days as years months days
+const daysToYMD = (days, short = false) => {
+  const y = Math.floor(days / 365);
+  days -= y * 365;
+  const m = Math.floor(days / 30.4);
+  days -= m * 30.4;
+  const d = Math.round(days);
+
+  if (short)
+    return [`${y ? `${y}y ` : ''}`,
+            `${m ? `${m}m ` : ''}`,
+            `${d ? `${d}d` : ''}`].join('');
+
+  return [`${y ? (`${y} year${y > 1 ? 's ' : ' '}`) : ''}`,
+          `${m ? (`${m} month${m > 1 ? 's ' : ' '}`) : ''}`,
+          `${d ? (`${d} day${d > 1 ? 's' : ''}`) : ''}`].join('');
+};
+
+const DOM = {
+  createElement(tag, id, classes) {
+    const elm = document.createElement(tag);
+    if (id) elm.id = id;
+    if (classes) elm.className = classes;
+    return elm;
+  }
+};

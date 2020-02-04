@@ -95,7 +95,7 @@ class AppStore {
   async getRecordById(id) {
     return (await this.data()).find(rec => rec.id === id);
   }
-};
+}
 
 const appStores = {
   ADM_AppStores: new AppStore({ name: 'ADM_AppStores', id: 1, title: 'Application Stores',
@@ -164,10 +164,7 @@ const appStores = {
       { name: 'countryId', title: 'Country', type: 'select', required: true, source: { name: 'GLO_Countries', property: 'name' }},
       { name: 'days', title: 'Days', type: 'calc', align: 'right', funcName: 'numberOfDaysBetween' }
     ],
-    functions: [
-      { name: 'reports.gloCountriesStay.run', title: 'Report' },
-      { name: 'reports.gloCountriesStaySum.run', title: 'Report Sum' }
-    ]
+    reports: ['RepGloCountriesStay', 'RepGloCountriesStaySum']
   }),
 
   GLO_HelpPlaces: new AppStore({ name: 'GLO_HelpPlaces', id: 12, title: 'Help Places', orderBy: 'date', orderAsc: false,
@@ -200,9 +197,7 @@ const appStores = {
       { name: 'desc', title: 'Description', type: 'text' },
       { name: 'countryId', title: 'Country', type: 'select', required: true, default: [16], source: { name: 'GLO_Countries', property: 'name' }}
     ],
-    functions: [
-      { name: 'reports.monCosts.run', title: 'Report' }
-    ]
+    reports: ['RepMonCosts']
   }),
 
   MON_Incomes: new AppStore({ name: 'MON_Incomes', id: 21, title: 'Incomes', orderBy: 'date', orderAsc: false,
@@ -274,10 +269,7 @@ const appStores = {
       { name: 'desc', title: 'Description', type: 'text' },
       { name: 'people', title: 'People', type: 'multiSelect', required: true, default: [1,2], source: { name: 'GLO_People', property: 'name' }}
     ],
-    functions: [
-      { name: 'reports.carDrives.run', title: 'Report Km/Days/Places' },
-      { name: 'reports.carDrives2.run', title: 'Report Km/EUR' }
-    ]
+    reports: ['RepCarDrives', 'RepCarDrivesOld']
   }),
 
   CAR_Refueling: new AppStore({ name: 'CAR_Refueling', id: 31, title: 'Refueling', orderBy: 'date', orderAsc: false, onSaveFunc: 'carCalcConsumptions',
@@ -291,9 +283,7 @@ const appStores = {
       { name: 'fullTank', title: 'Full', type: 'bool' },
       { name: 'consumption', title: 'l/100km', type: 'readOnly', align: 'right' }
     ],
-    functions: [
-      { name: 'reports.carRefueling.run', title: 'Report' }
-    ]
+    reports: ['RepCarRefueling']
   }),
 
   CAR_PricePerKm: new AppStore({ name: 'CAR_PricePerKm', id: 32, title: 'Price per Km', orderBy: 'kmFrom', orderAsc: false,
