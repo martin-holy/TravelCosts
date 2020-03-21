@@ -1,8 +1,7 @@
 const app = {
-  run: async function () {
+  run: async function() {
     try {
-      if (await this.DB.open())
-        await this.DB.init();
+      if (await this.DB.open()) await this.DB.init();
 
       this.DB.dbSchema = await appStores.ADM_AppStores.data(); // now only for editing default values on select in ADM_AppStores
       await this.DB.updateSchema();
@@ -18,7 +17,7 @@ const app = {
     if (withAlert) alert(msg);
   },
 
-  createAppMap: async function () {
+  createAppMap: async function() {
     const appMapDiv = document.getElementById('appMap').querySelector('div');
 
     if (appMapDiv.innerHTML === '') {
@@ -57,10 +56,10 @@ const app = {
     app.UI.elmData.scrollTop = 0;
   },
 
-  downloadDataAsJson: function (data, fileName) {
+  downloadDataAsJson: function(data, fileName) {
     const file = new Blob([JSON.stringify(data)], { type: 'text/plain' }),
-          url = URL.createObjectURL(file),
-          a = document.createElement('a');
+      url = URL.createObjectURL(file),
+      a = document.createElement('a');
 
     a.href = url;
     a.download = fileName;
@@ -74,14 +73,14 @@ const app = {
 
   fetchData: function(url) {
     return new Promise((resolve, reject) => {
-      fetch(url).then(res => {
-        if (res.ok && res.status === 200 && res.type === 'basic')
-          resolve(res);
-        else
-          throw new Error('Response was not ok');
-      }).catch(err => {
-        reject(err);
-      });
+      fetch(url)
+        .then(res => {
+          if (res.ok && res.status === 200 && res.type === 'basic') resolve(res);
+          else throw new Error('Response was not ok');
+        })
+        .catch(err => {
+          reject(err);
+        });
     });
   },
 
@@ -92,27 +91,27 @@ const app = {
     dbSchema: [],
 
     open: function() {
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         let isUpgradeNeeded = false,
           req = window.indexedDB.open(this.dbName, 1); // version always 1
 
-        req.onsuccess = (e) => {
+        req.onsuccess = e => {
           this.db = e.target.result;
-          this.db.onerror = (e) => {
+          this.db.onerror = e => {
             app.log(`Database Error: ${e.target.errorCode}`, true);
-          }
+          };
 
           resolve(isUpgradeNeeded);
         };
 
-        req.onerror = (e) => {
+        req.onerror = e => {
           throw new Error(`Open Database Error: ${e.target.errorCode}`);
         };
 
-        req.onupgradeneeded = (e) => {
+        req.onupgradeneeded = e => {
           isUpgradeNeeded = true;
           this.db = e.target.result;
-          this.db.onerror = (e) => {
+          this.db.onerror = e => {
             app.log(`Database Error: ${e.target.errorCode}`, true);
           };
 
@@ -124,8 +123,7 @@ const app = {
 
     init: async function() {
       const stores = [];
-      for (const s of Object.values(appStores))
-        stores.push(s.dbSchema);
+      for (const s of Object.values(appStores)) stores.push(s.dbSchema);
 
       await appStores.ADM_AppStores.insert(stores);
       await appStores.ADM_AppStoreGroups.insert([
@@ -178,9 +176,9 @@ const app = {
         input.type = 'file';
         input.accept = '.json';
 
-        input.addEventListener('change', (e) => {
+        input.addEventListener('change', e => {
           const reader = new FileReader();
-          reader.onload = (e) => {
+          reader.onload = e => {
             const dbSource = JSON.parse(e.target.result),
               storeNames = [];
 
@@ -193,7 +191,7 @@ const app = {
               resolve();
             };
 
-            tx.onerror = (e) => {
+            tx.onerror = e => {
               app.log(`Database import error: ${e.target.errorCode}`, true);
               reject();
             };
@@ -203,9 +201,8 @@ const app = {
                 delRequest = dbStore.clear();
 
               delRequest.onsuccess = () => {
-                for (const item of store.values)
-                  dbStore.add(item);
-              }
+                for (const item of store.values) dbStore.add(item);
+              };
             }
           };
           reader.readAsText(e.srcElement.files[0]);
@@ -243,18 +240,25 @@ const app = {
 
       this.cursor.init();
 
-      this.elmData.addEventListener('scroll', (e) => {
-        if (app.UI.contentTabs.isActive('grid')) {
-          const gridFixed = app.UI.elmGrid.querySelector('.grid-fixed');
-          if (gridFixed)
-            gridFixed.style.left = `-${e.target.scrollLeft}px`;
-          app.form.grid.appendRows();
-        }
-      }, false);
+      this.elmData.addEventListener(
+        'scroll',
+        e => {
+          if (app.UI.contentTabs.isActive('grid')) {
+            const gridFixed = app.UI.elmGrid.querySelector('.grid-fixed');
+            if (gridFixed) gridFixed.style.left = `-${e.target.scrollLeft}px`;
+            app.form.grid.appendRows();
+          }
+        },
+        false
+      );
 
-      this.elmEdit.querySelector('form').addEventListener('submit', (e) => {
-        e.preventDefault();
-      }, false);
+      this.elmEdit.querySelector('form').addEventListener(
+        'submit',
+        e => {
+          e.preventDefault();
+        },
+        false
+      );
     },
 
     setTitle: function(title) {
@@ -295,7 +299,7 @@ const app = {
       canDrag: false,
       limitTop: 0,
 
-      init: function () {
+      init: function() {
         this.hide();
 
         app.UI.elmCursor.addEventListener('mousedown', () => this.dragStart());
@@ -303,13 +307,13 @@ const app = {
 
         document.addEventListener('mouseup', () => this.dragEnd());
         document.addEventListener('touchend', () => this.dragEnd());
-        document.addEventListener('mousemove', (e) => this.dragCursor(e));
-        document.addEventListener('touchmove', (e) => this.dragCursor(e));
+        document.addEventListener('mousemove', e => this.dragCursor(e));
+        document.addEventListener('touchmove', e => this.dragCursor(e));
 
         app.UI.elmData.addEventListener('scroll', () => this.onChanged());
       },
 
-      show: function (limitTop) {
+      show: function(limitTop) {
         app.UI.elmCursor.style.top = limitTop + 'px';
         app.UI.elmCursor.style.display = 'block';
         this.limitTop = limitTop;
@@ -333,14 +337,12 @@ const app = {
         if (!this.canDrag) return;
 
         const pageY = e.pageY ? e.pageY : e.touches[0].pageY,
-              limitBottom = app.UI.elmData.clientHeight + 20;
+          limitBottom = app.UI.elmData.clientHeight + 20;
         let top = pageY - 10;
 
-          // limit top/bottom position
-        if (top < this.limitTop)
-          top = this.limitTop;
-        else if (top > limitBottom)
-          top = limitBottom;
+        // limit top/bottom position
+        if (top < this.limitTop) top = this.limitTop;
+        else if (top > limitBottom) top = limitBottom;
 
         app.UI.elmCursor.style.top = top + 'px';
         this.onChanged();
@@ -358,10 +360,8 @@ const app = {
 
     menu: {
       toggle: function() {
-        if (app.UI.elmMenu.style.visibility === 'visible')
-          this.hide();
-        else
-          this.open();
+        if (app.UI.elmMenu.style.visibility === 'visible') this.hide();
+        else this.open();
       },
 
       open: function() {
@@ -374,9 +374,9 @@ const app = {
 
       create: async function() {
         const stores = await appStores.ADM_AppStores.data(),
-              groups = await appStores.ADM_AppStoreGroups.data(),
-              siblings = groups.find(g => g.stores.includes(app.form.current.dbSchema.id)).stores,
-              items = [];
+          groups = await appStores.ADM_AppStoreGroups.data(),
+          siblings = groups.find(g => g.stores.includes(app.form.current.dbSchema.id)).stores,
+          items = [];
 
         items.push('<li onclick="app.createAppMap();">Home</li>'); // link to site map
         items.push('<li class="liDivider">Forms</li>'); // header Forms
@@ -410,8 +410,7 @@ const app = {
       activeTabId: '',
 
       active: function(name) {
-        for (const x of app.UI.elmData.children)
-          x.style.display = 'none';
+        for (const x of app.UI.elmData.children) x.style.display = 'none';
 
         document.getElementById(name).style.display = 'block';
         this.activeTabId = name;
@@ -439,7 +438,7 @@ const app = {
       app.UI.toolBar.clear();
       app.UI.toolBar.appendHtml('<div class="toolBarIcon" onclick="app.form.record.new();">✹</div>');
 
-      this.current.data({ sorted: true }).then((gridItems) => {
+      this.current.data({ sorted: true }).then(gridItems => {
         this.grid.create(this.current.dbSchema, gridItems, true);
         this.edit.create();
       });
@@ -465,7 +464,7 @@ const app = {
 
         // THEAD
         const thead = [],
-              theadDivs = [];
+          theadDivs = [];
         for (const prop of form.properties) {
           if (prop.hidden || prop.type === 'array') continue;
           thead.push(`<th>${prop.title}</th>`);
@@ -484,16 +483,19 @@ const app = {
         this.sourceThead.querySelectorAll('th').forEach(elm => {
           widths.push(getComputedStyle(elm, null).width);
         });
-        this.fixedThead.querySelectorAll('div').forEach((elm, i) => elm.style.width = widths[i]);
+        this.fixedThead.querySelectorAll('div').forEach((elm, i) => (elm.style.width = widths[i]));
         this.fixedThead.style.width = getComputedStyle(app.UI.elmGrid.querySelector('.grid'), null).width;
       },
 
-      appendRows: function () {
+      appendRows: function() {
         const itemsCount = this.gridItems.length,
-              d = app.UI.elmData;
+          d = app.UI.elmData;
 
         // while bottom overflow < grid container && grid rows count < data items count
-        while (app.UI.elmGrid.clientHeight - d.clientHeight - d.scrollTop < d.clientHeight && this.rowsCount < itemsCount) {
+        while (
+          app.UI.elmGrid.clientHeight - d.clientHeight - d.scrollTop < d.clientHeight &&
+          this.rowsCount < itemsCount
+        ) {
           this.tbody.appendChild(this.createRow(this.gridItems[this.rowsCount]));
           this.rowsCount++;
         }
@@ -508,12 +510,15 @@ const app = {
           if (prop.hidden) continue;
 
           let style = prop.align ? `text-align:${prop.align};` : '',
-              val = '';
+            val = '';
 
           switch (prop.type) {
-            case 'array': continue;
+            case 'array':
+              continue;
             case 'multiSelect': {
-              val = item[prop.name].map(id => (prop.source.store.cache.find(d => d.id === id)[prop.source.property])).join(', ');
+              val = item[prop.name]
+                .map(id => prop.source.store.cache.find(d => d.id === id)[prop.source.property])
+                .join(', ');
               break;
             }
             case 'select': {
@@ -533,33 +538,31 @@ const app = {
 
           if (!val) val = '';
 
-          if (prop.name === 'bgColor')
-            style += val === '' ? '' : `background-color:${val};`;
+          if (prop.name === 'bgColor') style += val === '' ? '' : `background-color:${val};`;
 
           tds.push(`<td${style !== '' ? ` style="${style}"` : ''}>${val}</td>`);
         }
 
         const tr = document.createElement('tr');
         tr.innerHTML = tds.join('');
-        if (this.isEditable)
-          tr.addEventListener('click', () => app.form.record.edit(item.id));
+        if (this.isEditable) tr.addEventListener('click', () => app.form.record.edit(item.id));
 
         return tr;
       },
 
-      insertRow: function (index, item) {
+      insertRow: function(index, item) {
         if (index < this.rowsCount || index === 0) {
           this.tbody.insertBefore(this.createRow(item), this.tbody.children[index]);
           this.rowsCount++;
         }
       },
 
-      updateRow: function (oldIndex, newIndex, item) {
+      updateRow: function(oldIndex, newIndex, item) {
         this.deleteRow(oldIndex);
         this.insertRow(newIndex, item);
       },
 
-      deleteRow: function (index) {
+      deleteRow: function(index) {
         const row = this.tbody.children[index];
         if (row) {
           this.tbody.removeChild(row);
@@ -571,15 +574,16 @@ const app = {
     edit: {
       create: function() {
         const tbody = [],
-              form = app.UI.elmEdit.querySelector('form'),
-              table = form.querySelector('table');
+          form = app.UI.elmEdit.querySelector('form'),
+          table = form.querySelector('table');
 
         for (const prop of app.form.current.dbSchema.properties) {
           if (prop.hidden) continue;
           switch (prop.type) {
             case 'calc':
             case 'readOnly':
-            case 'button': continue;
+            case 'button':
+              continue;
             case 'properties':
               tbody.push(`<tr><td colspan="2">${prop.title} Defaults:</td></tr>`);
               tbody.push(`<tr><td colspan="2"><table id="__table_${prop.name}"></table></td></tr>`);
@@ -587,7 +591,7 @@ const app = {
             default:
               tbody.push(`<tr><td>${prop.title}:</td><td>${this.getInput(prop)}</td></tr>`);
               break;
-            }
+          }
         }
 
         form.id = `form_${app.form.current.dbSchema.name}`;
@@ -596,34 +600,38 @@ const app = {
 
       getInput: function(prop) {
         const required = prop.required ? 'required' : '',
-              readonly = prop.readonly ? 'readonly' : '',
-              elmId = `form_${app.form.current.dbSchema.name}_${prop.name}`;
+          readonly = prop.readonly ? 'readonly' : '',
+          elmId = `form_${app.form.current.dbSchema.name}_${prop.name}`;
 
         switch (prop.type) {
-          case 'int': return `<input type="number" id="${elmId}" ${readonly} ${required}>`;
-          case 'num': return `<input type="number" id="${elmId}" ${readonly} ${required} step="0.001" min="0">`;
-          case 'date': return `<input type="date" id="${elmId}" ${readonly} ${required}>`;
-          case 'text': return `<input type="text" id="${elmId}" ${readonly} ${required} autocomplete="on">`;
-          case 'textarea': return `<textarea id="${elmId}" ${readonly} ${required}></textarea>`;
-          case 'bool': return `<input type="checkbox" id="${elmId}" ${readonly}>`;
+          case 'int':
+            return `<input type="number" id="${elmId}" ${readonly} ${required}>`;
+          case 'num':
+            return `<input type="number" id="${elmId}" ${readonly} ${required} step="0.001" min="0">`;
+          case 'date':
+            return `<input type="date" id="${elmId}" ${readonly} ${required}>`;
+          case 'text':
+            return `<input type="text" id="${elmId}" ${readonly} ${required} autocomplete="on">`;
+          case 'textarea':
+            return `<textarea id="${elmId}" ${readonly} ${required}></textarea>`;
+          case 'bool':
+            return `<input type="checkbox" id="${elmId}" ${readonly}>`;
           case 'select':
           case 'multiSelect': {
             const select = xSelect(elmId),
-                  data = [];
+              data = [];
 
-            for (const x of prop.source.store.cache)
-              data.push({ value: x.id, name: x[prop.source.property] });
+            for (const x of prop.source.store.cache) data.push({ value: x.id, name: x[prop.source.property] });
 
             select.create(data, prop.type === 'multiSelect');
 
-            if (prop.source.onchangeFunc === undefined)
-              delete select.element.dataset.onchange;
-            else
-              select.element.dataset.onchange = prop.source.onchangeFunc;
+            if (prop.source.onchangeFunc === undefined) delete select.element.dataset.onchange;
+            else select.element.dataset.onchange = prop.source.onchangeFunc;
 
             return select.element.outerHTML;
           }
-          default: return '';
+          default:
+            return '';
         }
       },
 
@@ -652,35 +660,50 @@ const app = {
           if (prop.hidden) continue;
 
           const elmId = `form_${app.form.current.dbSchema.name}_${prop.name}`;
-          if (isNew) { // preset default
+          if (isNew) {
+            // preset default
             switch (prop.type) {
               case 'calc':
               case 'readOnly':
               case 'button':
               case 'properties':
-              case 'variable': continue;
-              case 'date': document.getElementById(elmId).value = new Date().toYMD(); break;
-              case 'select': if (prop.default) xSelect(elmId).set(prop.default); break;
-              case 'multiSelect': if (prop.default) xSelect(elmId).set(prop.default); break;
-              default: document.getElementById(elmId).value = '';
+              case 'variable':
+                continue;
+              case 'date':
+                document.getElementById(elmId).value = new Date().toYMD();
+                break;
+              case 'select':
+                if (prop.default) xSelect(elmId).set(prop.default);
+                break;
+              case 'multiSelect':
+                if (prop.default) xSelect(elmId).set(prop.default);
+                break;
+              default:
+                document.getElementById(elmId).value = '';
             }
           } else {
             let rec = this.current;
             switch (prop.type) {
               case 'calc':
               case 'readOnly':
-              case 'button': continue;
-              case 'bool': document.getElementById(elmId).toggleAttribute('checked', rec[prop.name]); break;
-              case 'select': xSelect(elmId).set([rec[prop.name]]); break;
-              case 'multiSelect': xSelect(elmId).set(rec[prop.name]); break;
+              case 'button':
+                continue;
+              case 'bool':
+                document.getElementById(elmId).toggleAttribute('checked', rec[prop.name]);
+                break;
+              case 'select':
+                xSelect(elmId).set([rec[prop.name]]);
+                break;
+              case 'multiSelect':
+                xSelect(elmId).set(rec[prop.name]);
+                break;
               case 'properties': {
                 await app.DB.linkStores(rec);
                 let table = document.getElementById(`__table_${prop.name}`),
-                    props = rec[prop.name].filter(x => x.source),
-                    trs = [];
+                  props = rec[prop.name].filter(x => x.source),
+                  trs = [];
 
-                for (const x of props)
-                  trs.push(`<tr><td>${x.title}:</td><td>${app.form.edit.getInput(x)}</td></tr>`);
+                for (const x of props) trs.push(`<tr><td>${x.title}:</td><td>${app.form.edit.getInput(x)}</td></tr>`);
                 table.innerHTML = trs.join('');
                 for (const x of props) {
                   if (!x.default) continue;
@@ -688,7 +711,9 @@ const app = {
                 }
                 break;
               }
-              default: document.getElementById(elmId).value = rec[prop.name] || ''; break;
+              default:
+                document.getElementById(elmId).value = rec[prop.name] || '';
+                break;
             }
           }
         }
@@ -700,28 +725,38 @@ const app = {
         if (app.UI.elmEdit.querySelectorAll(':invalid').length > 0) return;
         //TODO check for required multiSelect
         const rec = this.current,
-              isNew = !rec.id;
+          isNew = !rec.id;
 
         for (const prop of app.form.current.dbSchema.properties) {
           if (prop.hidden) continue;
           const elmId = `form_${app.form.current.dbSchema.name}_${prop.name}`,
-                elm = app.UI.elmEdit.querySelector(`#${elmId}`);
+            elm = app.UI.elmEdit.querySelector(`#${elmId}`);
           switch (prop.type) {
             case 'calc':
             case 'readOnly':
-            case 'button': continue;
-            case 'bool': rec[prop.name] = elm.checked; break;
+            case 'button':
+              continue;
+            case 'bool':
+              rec[prop.name] = elm.checked;
+              break;
             case 'int':
-            case 'num': rec[prop.name] = elm.value === '' ? null : Number(elm.value); break;
-            case 'select': rec[prop.name] = xSelect(elmId).get()[0]; break;
-            case 'multiSelect': rec[prop.name] = xSelect(elmId).get(); break;
+            case 'num':
+              rec[prop.name] = elm.value === '' ? null : Number(elm.value);
+              break;
+            case 'select':
+              rec[prop.name] = xSelect(elmId).get()[0];
+              break;
+            case 'multiSelect':
+              rec[prop.name] = xSelect(elmId).get();
+              break;
             case 'properties':
               for (const x of rec[prop.name]) {
                 if (!x.source) continue;
                 x.default = xSelect(`form_${app.form.current.dbSchema.name}_${x.name}`).get();
               }
               break;
-            default: rec[prop.name] = elm.value === '' ? null : elm.value;
+            default:
+              rec[prop.name] = elm.value === '' ? null : elm.value;
           }
         }
 
@@ -733,17 +768,19 @@ const app = {
         await app.form.current.iudStoreData(isNew ? 'insert' : 'update', [rec]);
         app.form.edit.hide();
 
-        if (app.form.current.dbSchema.onSaveFunc)
-          await window[app.form.current.dbSchema.onSaveFunc]();
+        // BUG - tahle funkce muze zmenit poradi a tim to posrat
+        // tyhle fuknce by mely poresit update gridu, ne jenom aktualni zaznam, ale vsechno
+        // takze to chce komplet promyslet
+        if (app.form.current.dbSchema.onSaveFunc) await window[app.form.current.dbSchema.onSaveFunc]();
 
-        const oldIndex = isNew ? null : app.form.current.cache.indexOf(rec);
+        // tohle zatim vypnu a dam grid reload
+        /*const oldIndex = isNew ? null : app.form.current.cache.indexOf(rec);
         await app.form.current.data({ sorted: true });
         const newIndex = app.form.current.cache.indexOf(rec);
 
-        if (isNew)
-          app.form.grid.insertRow(newIndex, rec);
-        else
-          app.form.grid.updateRow(oldIndex, newIndex, rec);
+        if (isNew) app.form.grid.insertRow(newIndex, rec);
+        else app.form.grid.updateRow(oldIndex, newIndex, rec);*/
+        app.form.load(app.form.current.dbSchema.name);
       },
 
       delete: async function() {
@@ -753,12 +790,12 @@ const app = {
             for (const prop of store.dbSchema.properties) {
               if (prop.source && prop.source.name === app.form.current.dbSchema.name) {
                 const storeItems = await store.data();
-                if (storeItems.find(x => {
-                  if (Array.isArray(x[prop.name]))
-                    return x[prop.name].includes(this.current.id);
-                  else
-                    return x[prop.name] === this.current.id;
-                })) {
+                if (
+                  storeItems.find(x => {
+                    if (Array.isArray(x[prop.name])) return x[prop.name].includes(this.current.id);
+                    else return x[prop.name] === this.current.id;
+                  })
+                ) {
                   alert(`This record can't be deleted because is used in ${store.dbSchema.title} store!`);
                   return;
                 }
@@ -776,12 +813,13 @@ const app = {
   },
 
   canvas: {
-    drawRect: function (ctx, x, y, width, height, fillStyle, strokeStyle, angle) {
-      const tX = x, tY = y;
+    drawRect: function(ctx, x, y, width, height, fillStyle, strokeStyle, angle) {
+      const tX = x,
+        tY = y;
       if (angle !== 0 || angle !== undefined) {
         ctx.save();
         ctx.translate(tX, tY);
-        ctx.rotate(angle * Math.PI / 180);
+        ctx.rotate((angle * Math.PI) / 180);
         x = 0;
         y = 0;
       }
@@ -799,12 +837,13 @@ const app = {
       }
     },
 
-    drawText: function (ctx, text, x, y, fillStyle, strokeStyle, font, angle) {
-      const tX = x, tY = y;
+    drawText: function(ctx, text, x, y, fillStyle, strokeStyle, font, angle) {
+      const tX = x,
+        tY = y;
       if (angle !== 0 || angle !== undefined) {
         ctx.save();
         ctx.translate(tX, tY);
-        ctx.rotate(angle * Math.PI / 180);
+        ctx.rotate((angle * Math.PI) / 180);
         x = 0;
         y = 0;
       }
@@ -827,8 +866,7 @@ const app = {
 
 window.addEventListener('load', async () => {
   // my way to update cache (:P)
-  if (await updateAppCache('TravelCosts'))
-    window.location.reload(true);
+  if (await updateAppCache('TravelCosts')) window.location.reload(true);
 
   navigator.serviceWorker
     .register('/TravelCosts/sw_cached_files.js')
@@ -841,37 +879,39 @@ window.addEventListener('load', async () => {
   repTools.runDemo();
 });
 
-var updateAppCache = async function (appName) {
-  return app.fetchData('/TravelCosts/updates.json').then(async (res) => {
-    const json = await res.json();
-    let ver = localStorage.getItem('appVersion');
+var updateAppCache = async function(appName) {
+  return app
+    .fetchData('/TravelCosts/updates.json')
+    .then(async res => {
+      const json = await res.json();
+      let ver = localStorage.getItem('appVersion');
 
-    // collect files for update
-    const files = new Set();
-    for (const u of json.updates)
-      if (ver == null || u.version > ver) {
-        ver = u.version;
-        for (const f of u.files)
-          files.add(f);
+      // collect files for update
+      const files = new Set();
+      for (const u of json.updates)
+        if (ver == null || u.version > ver) {
+          ver = u.version;
+          for (const f of u.files) files.add(f);
+        }
+
+      // nothing to update
+      if (files.size === 0) return false;
+
+      console.log('Update: Caching Files');
+      const cache = await caches.open(appName);
+
+      for (const key of files.keys()) {
+        await cache.delete(key);
+        await cache.add(key);
       }
 
-    // nothing to update
-    if (files.size === 0) return false;
+      // await cache.addAll(files); // <= this doesn't work
 
-    console.log('Update: Caching Files');
-    const cache = await caches.open(appName);
-
-    for (const key of files.keys()) {
-      await cache.delete(key);
-      await cache.add(key);
-    }
-
-    // await cache.addAll(files); // <= this doesn't work
-
-    localStorage.setItem('appVersion', ver);
-    return true;
-  }).catch(err => {
-    console.log('App Update:', err);
-    return false;
-  });
+      localStorage.setItem('appVersion', ver);
+      return true;
+    })
+    .catch(err => {
+      console.log('App Update:', err);
+      return false;
+    });
 };
