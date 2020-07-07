@@ -51,10 +51,11 @@
     },
     {
       "version": "v2020.03.21",
-      "files": [
-        "/TravelCosts/js/appStores.js",
-        "/TravelCosts/js/appCore.js"
-      ]
+      "files": ["/TravelCosts/js/appStores.js", "/TravelCosts/js/appCore.js"]
+    },
+    {
+      "version": "v2020.07.07",
+      "files": ["/TravelCosts/js/appCore.js"]
     }
   ]
 }

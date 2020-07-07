@@ -137,6 +137,7 @@ const app = {
 
     updateSchema: async function() {
       const settings = await appStores.ADM_AppSettings.getRecordById(1);
+      if (!settings) return;
 
       if (settings.dbVersion === this.dbVersion) return;
 
@@ -769,8 +770,8 @@ const app = {
         app.form.edit.hide();
 
         // BUG - tahle funkce muze zmenit poradi a tim to posrat
-        // tyhle fuknce by mely poresit update gridu, ne jenom aktualni zaznam, ale vsechno
-        // takze to chce komplet promyslet
+        // po tyhle funkci by se mel udelat update gridu a ne jen aktualniho zaznamu
+        // chce to komplet prevymyslet, zatim dam reload gridu, misto abych aktualizoval jen aktualni zaznam
         if (app.form.current.dbSchema.onSaveFunc) await window[app.form.current.dbSchema.onSaveFunc]();
 
         // tohle zatim vypnu a dam grid reload
